@@ -21,19 +21,20 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Eye, Send, FileText, Calendar, Clock, Zap } from "lucide-react";
-import { invoices } from "@/data/mockData";
+import { Plus, Search, Eye, Send, FileText, Calendar, Clock, Zap, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useInvoices } from "@/hooks/useInvoices";
 
 const BillingPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const { invoices, loading, stats } = useInvoices();
 
   const filteredInvoices = invoices.filter((inv) => {
     const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
     const matchesSearch =
-      inv.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (inv.subscriber?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -43,15 +44,6 @@ const BillingPage = () => {
       currency: "KES",
       minimumFractionDigits: 0,
     }).format(value);
-  };
-
-  const stats = {
-    totalInvoices: invoices.length,
-    paid: invoices.filter((i) => i.status === "Paid").length,
-    pending: invoices.filter((i) => i.status === "Pending").length,
-    overdue: invoices.filter((i) => i.status === "Overdue").length,
-    totalAmount: invoices.reduce((acc, inv) => acc + inv.amount, 0),
-    paidAmount: invoices.filter((i) => i.status === "Paid").reduce((acc, inv) => acc + inv.amount, 0),
   };
 
   return (
