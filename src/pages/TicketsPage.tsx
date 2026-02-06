@@ -226,9 +226,11 @@ const TicketsPage = () => {
       </Card>
 
       {/* Summary */}
-      <div className="mt-4 text-sm text-muted-foreground">
-        Showing {filteredTickets.length} of {tickets.length} tickets
-      </div>
+      {tickets.length > 0 && (
+        <div className="mt-4 text-sm text-muted-foreground">
+          Showing {filteredTickets.length} of {tickets.length} tickets
+        </div>
+      )}
     </SidebarLayout>
   );
 };
