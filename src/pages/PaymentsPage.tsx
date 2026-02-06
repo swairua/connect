@@ -169,25 +169,35 @@ const PaymentsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPayments.map((payment) => (
-                    <TableRow key={payment.id} className="hover:bg-muted/50">
-                      <TableCell className="font-mono text-sm">{payment.id}</TableCell>
-                      <TableCell className="text-muted-foreground">{payment.phone}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
-                      <TableCell className="font-mono text-sm">{payment.invoiceId}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={payment.status} />
+                  {filteredPayments.length > 0 ? (
+                    filteredPayments.map((payment) => (
+                      <TableRow key={payment.id} className="hover:bg-muted/50">
+                        <TableCell className="font-mono text-sm">{payment.id}</TableCell>
+                        <TableCell className="text-muted-foreground">{payment.phone}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
+                        <TableCell className="font-mono text-sm">{payment.invoice_id || "N/A"}</TableCell>
+                        <TableCell>
+                          <StatusBadge status={payment.status} />
+                        </TableCell>
+                        <TableCell>
+                          {payment.reconciled ? (
+                            <Badge variant="success">Yes</Badge>
+                          ) : (
+                            <Badge variant="secondary">No</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {new Date(payment.created_at).toLocaleString('en-KE')}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        No payments found
                       </TableCell>
-                      <TableCell>
-                        {payment.reconciled ? (
-                          <Badge variant="success">Yes</Badge>
-                        ) : (
-                          <Badge variant="secondary">No</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{payment.timestamp}</TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
