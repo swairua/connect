@@ -20,31 +20,45 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MessageSquare, AlertCircle, CheckCircle, Clock } from "lucide-react";
-import { tickets } from "@/data/mockData";
+import { Plus, Search, MessageSquare, AlertCircle, CheckCircle, Clock, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useTickets } from "@/hooks/useTickets";
 
 const TicketsPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const { tickets, loading, stats } = useTickets();
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || ticket.priority === priorityFilter;
     const matchesSearch =
-      ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.ticket_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      (ticket.subscriber_name || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
-  const stats = {
+  const pageStats = {
     total: tickets.length,
-    open: tickets.filter((t) => t.status === "Open").length,
-    inProgress: tickets.filter((t) => t.status === "In Progress").length,
+    open: stats.open,
+    inProgress: stats.inProgress,
     closed: tickets.filter((t) => t.status === "Closed").length,
   };
+
+  if (loading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading tickets...</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout>
