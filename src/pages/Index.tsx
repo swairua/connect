@@ -29,8 +29,8 @@ import {
   CheckCircle,
   Timer,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
-import { dashboardStats, revenueData, servicePlans, ticketStats } from "@/data/mockData";
 import {
   AreaChart,
   Area,
@@ -47,7 +47,10 @@ import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { DatabaseInitButton } from "@/components/dashboard/DatabaseInitButton";
 import { DatabaseMigrationButton } from "@/components/dashboard/DatabaseMigrationButton";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { usePackages } from "@/hooks/usePackages";
+import { useTickets } from "@/hooks/useTickets";
 
 const Index = () => {
   const navigate = useNavigate();
