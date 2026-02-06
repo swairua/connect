@@ -56,8 +56,31 @@ const variablesList = [
   "end_time",
 ];
 
+const defaultTemplates = [
+  {
+    id: "TPL001",
+    name: "Welcome Message",
+    type: "SMS" as const,
+    category: "Onboarding" as const,
+    subject: "",
+    content: "Welcome to NetFlow ISP, {{customer_name}}! Your account has been activated. Package: {{package_name}}. Support: +254 700 123 456",
+    enabled: true,
+    variables: ["customer_name", "package_name"],
+  },
+  {
+    id: "TPL002",
+    name: "Payment Reminder (5 Days)",
+    type: "SMS" as const,
+    category: "Billing" as const,
+    subject: "",
+    content: "Hi {{customer_name}}, your invoice of KES {{amount}} is due in 5 days ({{due_date}}). Pay via M-Pesa Paybill 123456. Ref: {{invoice_id}}",
+    enabled: true,
+    variables: ["customer_name", "amount", "due_date", "invoice_id"],
+  },
+];
+
 const NotificationTemplatesPage = () => {
-  const [templates, setTemplates] = useState(notificationTemplates);
+  const [templates, setTemplates] = useState(defaultTemplates);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<typeof notificationTemplates[0] | null>(null);
