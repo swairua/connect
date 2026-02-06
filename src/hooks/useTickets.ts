@@ -36,7 +36,10 @@ export const useTickets = (): UseTicketsReturn => {
   const { user } = useAuth();
 
   const fetchTickets = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('useTickets: No user logged in yet');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -47,9 +50,18 @@ export const useTickets = (): UseTicketsReturn => {
         .from('tenant_members')
         .select('tenant_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error('Tenant lookup error:', tenantError.message || tenantError);
+        throw tenantError;
+      }
+
+      if (!tenantMembers) {
+        console.warn('No tenant found for user:', user.id);
+        setTickets([]);
+        return;
+      }
 
       // Fetch tickets for the tenant
       const { data, error: ticketError } = await supabase
@@ -72,7 +84,10 @@ export const useTickets = (): UseTicketsReturn => {
         .eq('tenant_id', tenantMembers.tenant_id)
         .order('created_at', { ascending: false });
 
-      if (ticketError) throw ticketError;
+      if (ticketError) {
+        console.error('Tickets fetch error:', ticketError.message || ticketError);
+        throw ticketError;
+      }
 
       // Transform data
       const transformedTickets = data?.map(ticket => ({
@@ -91,8 +106,10 @@ export const useTickets = (): UseTicketsReturn => {
 
       setTickets(transformedTickets);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch tickets'));
-      console.error('Error fetching tickets:', err);
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      const error = new Error(`Failed to fetch tickets: ${errorMessage}`);
+      setError(error);
+      console.error('Error fetching tickets:', errorMessage, err);
     } finally {
       setLoading(false);
     }
