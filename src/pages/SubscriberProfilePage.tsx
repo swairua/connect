@@ -83,6 +83,17 @@ const SubscriberProfilePage = () => {
     { day: "Sun", upload: 28, download: 132 },
   ], []);
 
+  if (subscribersLoading) {
+    return (
+      <SidebarLayout>
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground mt-2">Loading subscriber data...</p>
+        </div>
+      </SidebarLayout>
+    );
+  }
+
   if (!subscriber) {
     return (
       <SidebarLayout>
