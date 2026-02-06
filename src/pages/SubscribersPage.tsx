@@ -134,43 +134,53 @@ const SubscribersPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSubscribers.map((subscriber) => (
-                <TableRow
-                  key={subscriber.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => navigate(`/subscribers/${subscriber.id}`)}
-                >
-                  <TableCell className="font-medium">{subscriber.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{subscriber.phone}</TableCell>
-                  <TableCell>{subscriber.package}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={subscriber.status} />
-                  </TableCell>
-                  <TableCell className={subscriber.outstandingAmount > 0 ? "text-destructive font-medium" : "text-muted-foreground"}>
-                    {formatCurrency(subscriber.outstandingAmount)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{subscriber.lastPaymentDate}</TableCell>
-                  <TableCell className="font-mono text-sm text-muted-foreground">
-                    {subscriber.routerIp}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/subscribers/${subscriber.id}`)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {subscriber.status === "Active" ? (
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                          <Ban className="h-4 w-4" />
+              {filteredSubscribers.length > 0 ? (
+                filteredSubscribers.map((subscriber) => (
+                  <TableRow
+                    key={subscriber.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => navigate(`/subscribers/${subscriber.id}`)}
+                  >
+                    <TableCell className="font-medium">{subscriber.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{subscriber.phone}</TableCell>
+                    <TableCell>{subscriber.package_name || "N/A"}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={subscriber.status} />
+                    </TableCell>
+                    <TableCell className={subscriber.outstanding_amount > 0 ? "text-destructive font-medium" : "text-muted-foreground"}>
+                      {formatCurrency(subscriber.outstanding_amount)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {subscriber.last_payment_date ? new Date(subscriber.last_payment_date).toLocaleDateString('en-KE') : "Never"}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm text-muted-foreground">
+                      {subscriber.router_ip || "N/A"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/subscribers/${subscriber.id}`)}>
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      ) : (
-                        <Button variant="ghost" size="icon" className="text-success hover:text-success">
-                          <RefreshCw className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                        {subscriber.status === "Active" ? (
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="icon" className="text-success hover:text-success">
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    No subscribers found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
