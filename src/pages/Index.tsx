@@ -477,7 +477,8 @@ const Index = () => {
         </button>
 
         {showAdminSection && (
-          <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+            <DatabaseMigrationButton onSuccess={() => {}} />
             <DatabaseInitButton onDataDeleted={() => setShowAdminSection(false)} />
           </div>
         )}
