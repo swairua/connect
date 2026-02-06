@@ -13,8 +13,17 @@ interface AutoMigrationButtonProps {
 
 export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => {
   const [migrationDone, setMigrationDone] = useState(false);
+  const [showManualInstructions, setShowManualInstructions] = useState(false);
   const { runMigrations, loading } = useAutoMigration();
   const { toast } = useToast();
+
+  const handleCopySQL = () => {
+    navigator.clipboard.writeText(databaseMigrations);
+    toast({
+      title: 'SQL Copied',
+      description: 'Migration SQL copied to clipboard. Paste it in Supabase SQL Editor.',
+    });
+  };
 
   const handleMigrate = async () => {
     try {
