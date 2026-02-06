@@ -46,6 +46,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { DatabaseInitButton } from "@/components/dashboard/DatabaseInitButton";
+import { DatabaseMigrationButton } from "@/components/dashboard/DatabaseMigrationButton";
 import { useState } from "react";
 
 const Index = () => {
