@@ -73,7 +73,7 @@ const ReconciliationPage = () => {
   };
 
   const handleMatch = (paymentId: string, invoiceId: string, customerName: string) => {
-    setUnmatched(unmatched.filter((p) => p.id !== paymentId));
+    setUnmatchedToRemove([...unmatchedToRemove, paymentId]);
     setSelectedPayment(null);
     toast({
       title: "Payment Matched",
@@ -82,13 +82,18 @@ const ReconciliationPage = () => {
   };
 
   const handleMarkUnallocated = (paymentId: string) => {
-    setUnmatched(unmatched.filter((p) => p.id !== paymentId));
+    setUnmatchedToRemove([...unmatchedToRemove, paymentId]);
     setSelectedPayment(null);
     toast({
       title: "Marked as Unallocated",
       description: `Payment ${paymentId} has been marked as unallocated funds.`,
     });
   };
+
+  // Filter out the removed unmatched payments
+  const displayedUnmatched = useMemo(() => {
+    return unmatched.filter(p => !unmatchedToRemove.includes(p.id));
+  }, [unmatched, unmatchedToRemove]);
 
   const handleManualPayment = () => {
     setManualPaymentOpen(false);
