@@ -52,6 +52,64 @@ const AuthPage = () => {
     }
   }, [user, authLoading, isSuperAdmin, needsOnboarding, navigate]);
 
+  const createTestUser = async () => {
+    const testEmail = "gichukisimon@gmail.com";
+    const testPassword = "Password123";
+
+    try {
+      setIsCreatingTestUser(true);
+
+      // First, try to delete the existing user if it exists
+      try {
+        const { data: { user: existingUser } } = await supabase.auth.admin.getUserById("");
+        if (existingUser) {
+          await supabase.auth.admin.deleteUser("");
+        }
+      } catch (error) {
+        // User doesn't exist, which is fine
+        console.log("No existing user to delete");
+      }
+
+      // Create new test user via signUp
+      const { error: signupError } = await signUp(testEmail, testPassword, "Test User");
+
+      if (signupError) {
+        // If user already exists, try to just log them in
+        if (signupError.message.includes("already registered")) {
+          toast({
+            title: "Test User Exists",
+            description: "Using existing test user credentials. Auto-filling form...",
+          });
+        } else {
+          throw signupError;
+        }
+      } else {
+        toast({
+          title: "Test User Created",
+          description: "Test user created successfully!",
+        });
+      }
+
+      // Auto-fill the login form with test credentials
+      setLoginEmail(testEmail);
+      setLoginPassword(testPassword);
+
+      toast({
+        title: "Form Auto-Filled",
+        description: "Login form has been filled with test credentials. Click Sign In to continue.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error Creating Test User",
+        description: error.message || "Failed to create test user",
+        variant: "destructive",
+      });
+      console.error("Error creating test user:", error);
+    } finally {
+      setIsCreatingTestUser(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
