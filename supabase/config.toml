@@ -1,0 +1,13 @@
+project_id = "dvfvyrrowdmflmlowirp"
+
+[functions.test-mikrotik-connection]
+verify_jwt = false
+
+[functions.check-router-health]
+verify_jwt = false
+
+[functions.test-smartolt-connection]
+verify_jwt = false
+
+[functions.fetch-smartolt-onts]
+verify_jwt = false

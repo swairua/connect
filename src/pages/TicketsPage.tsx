@@ -1,0 +1,210 @@
+import { SidebarLayout } from "@/components/layout/SidebarLayout";
+import { PageHeader } from "@/components/common/PageHeader";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, MessageSquare, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { tickets } from "@/data/mockData";
+import { useState } from "react";
+
+const TicketsPage = () => {
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredTickets = tickets.filter((ticket) => {
+    const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
+    const matchesPriority = priorityFilter === "all" || ticket.priority === priorityFilter;
+    const matchesSearch =
+      ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesPriority && matchesSearch;
+  });
+
+  const stats = {
+    total: tickets.length,
+    open: tickets.filter((t) => t.status === "Open").length,
+    inProgress: tickets.filter((t) => t.status === "In Progress").length,
+    closed: tickets.filter((t) => t.status === "Closed").length,
+  };
+
+  return (
+    <SidebarLayout>
+      <PageHeader
+        title="Support Tickets"
+        description="Manage customer support requests and issues."
+      >
+        <Button variant="accent">
+          <Plus className="h-4 w-4" />
+          New Ticket
+        </Button>
+      </PageHeader>
+
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-4 mb-6">
+        <Card className="border-border shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Tickets</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </div>
+              <div className="rounded-lg bg-accent/10 p-3">
+                <MessageSquare className="h-5 w-5 text-accent" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Open</p>
+                <p className="text-2xl font-bold text-warning">{stats.open}</p>
+              </div>
+              <div className="rounded-lg bg-warning/10 p-3">
+                <AlertCircle className="h-5 w-5 text-warning" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">In Progress</p>
+                <p className="text-2xl font-bold text-info">{stats.inProgress}</p>
+              </div>
+              <div className="rounded-lg bg-info/10 p-3">
+                <Clock className="h-5 w-5 text-info" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Closed</p>
+                <p className="text-2xl font-bold text-success">{stats.closed}</p>
+              </div>
+              <div className="rounded-lg bg-success/10 p-3">
+                <CheckCircle className="h-5 w-5 text-success" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card className="mb-6 border-border shadow-card">
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search tickets..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Open">Open</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priority</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tickets Table */}
+      <Card className="border-border shadow-card">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="font-semibold">Ticket #</TableHead>
+                <TableHead className="font-semibold">Customer</TableHead>
+                <TableHead className="font-semibold">Subject</TableHead>
+                <TableHead className="font-semibold">Priority</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Created</TableHead>
+                <TableHead className="font-semibold">Last Update</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTickets.map((ticket) => (
+                <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableCell className="font-mono font-medium">{ticket.id}</TableCell>
+                  <TableCell>{ticket.customerName}</TableCell>
+                  <TableCell className="max-w-[250px] truncate">{ticket.subject}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        ticket.priority === "High"
+                          ? "destructive"
+                          : ticket.priority === "Medium"
+                          ? "warning"
+                          : "secondary"
+                      }
+                    >
+                      {ticket.priority}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={ticket.status} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{ticket.createdDate}</TableCell>
+                  <TableCell className="text-muted-foreground">{ticket.lastUpdate}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Summary */}
+      <div className="mt-4 text-sm text-muted-foreground">
+        Showing {filteredTickets.length} of {tickets.length} tickets
+      </div>
+    </SidebarLayout>
+  );
+};
+
+export default TicketsPage;
