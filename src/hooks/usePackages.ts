@@ -39,7 +39,10 @@ export const usePackages = (): UsePackagesReturn => {
   const { user } = useAuth();
 
   const fetchPackages = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('usePackages: No user logged in yet');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -50,9 +53,19 @@ export const usePackages = (): UsePackagesReturn => {
         .from('tenant_members')
         .select('tenant_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error('Tenant lookup error:', tenantError.message || tenantError);
+        throw tenantError;
+      }
+
+      if (!tenantMembers) {
+        console.warn('No tenant found for user:', user.id);
+        setPackages([]);
+        setServicePlans([]);
+        return;
+      }
 
       // Fetch packages
       const { data: packagesData, error: packageError } = await supabase
@@ -61,7 +74,10 @@ export const usePackages = (): UsePackagesReturn => {
         .eq('tenant_id', tenantMembers.tenant_id)
         .order('price', { ascending: true });
 
-      if (packageError) throw packageError;
+      if (packageError) {
+        console.error('Packages fetch error:', packageError.message || packageError);
+        throw packageError;
+      }
 
       const transformedPackages = packagesData?.map(pkg => ({
         id: pkg.id,
@@ -82,7 +98,10 @@ export const usePackages = (): UsePackagesReturn => {
         .eq('tenant_id', tenantMembers.tenant_id)
         .order('price', { ascending: true });
 
-      if (plansError) throw plansError;
+      if (plansError) {
+        console.error('Service plans fetch error:', plansError.message || plansError);
+        throw plansError;
+      }
 
       const transformedPlans = plansData?.map(plan => ({
         id: plan.id,
@@ -97,8 +116,10 @@ export const usePackages = (): UsePackagesReturn => {
 
       setServicePlans(transformedPlans);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch packages'));
-      console.error('Error fetching packages:', err);
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      const error = new Error(`Failed to fetch packages: ${errorMessage}`);
+      setError(error);
+      console.error('Error fetching packages:', errorMessage, err);
     } finally {
       setLoading(false);
     }
