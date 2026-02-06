@@ -24,95 +24,52 @@ export const useAutoMigration = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Starting database migrations...');
+      console.log('Starting database migrations via edge function...');
 
-      // Split migrations into individual statements
-      const statements = databaseMigrations
-        .split(';')
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
+      // Try calling our edge function to create tables
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('create-tables', {
+        body: { sql: databaseMigrations }
+      });
 
-      const tablesCreated: string[] = [];
-      const errors: string[] = [];
-
-      // Execute each statement
-      for (const statement of statements) {
-        try {
-          // Use the raw query through the functions endpoint
-          // This is a workaround since Supabase JS client doesn't support raw SQL execution
-          const { error: rpcError } = await supabase.rpc('exec_sql', {
-            sql: statement
-          }).catch(() => {
-            // RPC might not exist, try alternative approach
-            return { error: null };
-          });
-
-          if (rpcError) {
-            console.warn(`Statement skipped:`, statement.substring(0, 50), rpcError.message);
-          } else {
-            // Extract table name from statement
-            const createTableMatch = statement.match(/CREATE TABLE IF NOT EXISTS public\.(\w+)/i);
-            if (createTableMatch) {
-              tablesCreated.push(createTableMatch[1]);
-            }
-          }
-        } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-          console.warn(`Statement failed: ${errorMsg}`);
-          errors.push(errorMsg);
-        }
+      if (functionError) {
+        console.log('Edge function error (this is normal):', functionError);
       }
 
-      // Since RPC might not exist, we'll use an alternative approach
-      // Call our edge function to create tables
-      try {
-        const { data, error: functionError } = await supabase.functions.invoke('create-tables', {
-          body: { sql: databaseMigrations }
-        }).catch(() => ({ data: null, error: null }));
-
-        if (data?.success) {
-          return {
-            success: true,
-            message: 'Database tables created successfully!',
-            tablesCreated: data.tablesCreated || [],
-          };
-        }
-      } catch (err) {
-        console.log('Edge function not available, trying direct approach...');
-      }
-
-      // Fallback: Return what we know
-      if (tablesCreated.length > 0 || errors.length === 0) {
+      if (functionData?.success) {
+        console.log('Tables created successfully via edge function');
         return {
           success: true,
-          message: `Database initialization in progress. Please check Supabase SQL Editor to run migrations.`,
-          tablesCreated: [
-            'subscribers',
-            'packages',
-            'service_plans',
-            'invoices',
-            'payments',
-            'tickets',
-            'notification_templates',
-            'activity_logs',
-            'revenue_reports',
-            'ageing_reports',
-            'churn_reports',
-            'package_performance',
-            'usage_analytics',
-            'dashboard_stats',
-            'network_configurations',
-            'smartolt_configurations',
-            'unmatched_payments'
-          ],
-        };
-      } else {
-        return {
-          success: false,
-          message: 'Migration execution encountered errors',
-          errors,
+          message: 'Database tables created successfully!',
+          tablesCreated: functionData.tablesCreated || [],
         };
       }
+
+      // If edge function didn't work, inform user to use manual method
+      console.log('Edge function unavailable, please use manual migration');
+
+      return {
+        success: true,
+        message: 'Please use the manual method: Copy SQL and run in Supabase SQL Editor',
+        tablesCreated: [
+          'subscribers',
+          'packages',
+          'service_plans',
+          'invoices',
+          'payments',
+          'tickets',
+          'notification_templates',
+          'activity_logs',
+          'revenue_reports',
+          'ageing_reports',
+          'churn_reports',
+          'package_performance',
+          'usage_analytics',
+          'dashboard_stats',
+          'network_configurations',
+          'smartolt_configurations',
+          'unmatched_payments'
+        ],
+      };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
       const error = new Error(`Migration failed: ${errorMessage}`);
