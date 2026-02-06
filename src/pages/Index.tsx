@@ -28,6 +28,7 @@ import {
   Ticket,
   CheckCircle,
   Timer,
+  ChevronDown,
 } from "lucide-react";
 import { dashboardStats, revenueData, servicePlans, ticketStats } from "@/data/mockData";
 import {
@@ -44,6 +45,8 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { DatabaseInitButton } from "@/components/dashboard/DatabaseInitButton";
+import { useState } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
