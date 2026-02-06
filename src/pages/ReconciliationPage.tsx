@@ -38,9 +38,13 @@ import {
   XCircle,
   Ban,
   Plus,
+  Loader2,
 } from "lucide-react";
-import { unmatchedPayments, invoices, subscribers } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { usePayments } from "@/hooks/usePayments";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useSubscribers } from "@/hooks/useSubscribers";
+import { useMemo } from "react";
 
 const ReconciliationPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
