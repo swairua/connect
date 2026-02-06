@@ -103,10 +103,8 @@ const ReconciliationPage = () => {
     });
   };
 
-  const totalUnmatched = unmatched.reduce((a, b) => a + b.amount, 0);
-  const highConfidenceMatches = unmatched.filter(
-    (p) => p.suggestedMatches.length > 0 && p.suggestedMatches[0].confidence >= 80
-  ).length;
+  const totalUnmatched = displayedUnmatched.reduce((a, b) => a + Number(b.amount), 0);
+  const noMatches = displayedUnmatched.length;
 
   return (
     <SidebarLayout>
