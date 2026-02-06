@@ -173,29 +173,39 @@ const BillingPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id} className="hover:bg-muted/50">
-                      <TableCell className="font-mono font-medium">{invoice.id}</TableCell>
-                      <TableCell>{invoice.customerName}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(invoice.amount)}</TableCell>
-                      <TableCell className="text-muted-foreground">{invoice.dueDate}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={invoice.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {invoice.status !== "Paid" && (
+                  {filteredInvoices.length > 0 ? (
+                    filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice.id} className="hover:bg-muted/50">
+                        <TableCell className="font-mono font-medium">{invoice.invoice_number}</TableCell>
+                        <TableCell>{invoice.subscriber?.name || "Unknown"}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(invoice.amount)}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(invoice.due_date).toLocaleDateString('en-KE')}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={invoice.status} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon">
-                              <Send className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          )}
-                        </div>
+                            {invoice.status !== "Paid" && (
+                              <Button variant="ghost" size="icon">
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        No invoices found
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
