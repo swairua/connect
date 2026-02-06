@@ -24,32 +24,12 @@ export const useAutoMigration = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Starting database migrations via edge function...');
+      console.log('Database migrations require manual setup via Supabase SQL Editor');
 
-      // Try calling our edge function to create tables
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('create-tables', {
-        body: { sql: databaseMigrations }
-      });
-
-      if (functionError) {
-        console.log('Edge function error (this is normal):', functionError);
-      }
-
-      if (functionData?.success) {
-        console.log('Tables created successfully via edge function');
-        return {
-          success: true,
-          message: 'Database tables created successfully!',
-          tablesCreated: functionData.tablesCreated || [],
-        };
-      }
-
-      // If edge function didn't work, inform user to use manual method
-      console.log('Edge function unavailable, please use manual migration');
-
+      // Show user-friendly message with instructions
       return {
         success: true,
-        message: 'Please use the manual method: Copy SQL and run in Supabase SQL Editor',
+        message: 'Please complete the setup using Supabase SQL Editor',
         tablesCreated: [
           'subscribers',
           'packages',
