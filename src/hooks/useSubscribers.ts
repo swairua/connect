@@ -34,7 +34,10 @@ export const useSubscribers = (): UseSubscribersReturn => {
   const { user } = useAuth();
 
   const fetchSubscribers = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('useSubscribers: No user logged in yet');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -45,9 +48,18 @@ export const useSubscribers = (): UseSubscribersReturn => {
         .from('tenant_members')
         .select('tenant_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error('Tenant lookup error:', tenantError.message || tenantError);
+        throw tenantError;
+      }
+
+      if (!tenantMembers) {
+        console.warn('No tenant found for user:', user.id);
+        setSubscribers([]);
+        return;
+      }
 
       // Fetch subscribers for the tenant
       const { data, error: subscriberError } = await supabase
@@ -74,7 +86,10 @@ export const useSubscribers = (): UseSubscribersReturn => {
         .eq('tenant_id', tenantMembers.tenant_id)
         .order('name', { ascending: true });
 
-      if (subscriberError) throw subscriberError;
+      if (subscriberError) {
+        console.error('Subscribers fetch error:', subscriberError.message || subscriberError);
+        throw subscriberError;
+      }
 
       // Transform data
       const transformedSubscribers = data?.map(sub => ({
@@ -97,8 +112,10 @@ export const useSubscribers = (): UseSubscribersReturn => {
 
       setSubscribers(transformedSubscribers);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch subscribers'));
-      console.error('Error fetching subscribers:', err);
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      const error = new Error(`Failed to fetch subscribers: ${errorMessage}`);
+      setError(error);
+      console.error('Error fetching subscribers:', errorMessage, err);
     } finally {
       setLoading(false);
     }
