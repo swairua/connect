@@ -48,6 +48,7 @@ import { Progress } from "@/components/ui/progress";
 import { DatabaseInitButton } from "@/components/dashboard/DatabaseInitButton";
 import { DatabaseMigrationButton } from "@/components/dashboard/DatabaseMigrationButton";
 import { AutoMigrationButton } from "@/components/dashboard/AutoMigrationButton";
+import { ForceDatabaseMigrationButton } from "@/components/dashboard/ForceDatabaseMigrationButton";
 import { useState, useMemo } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { usePackages } from "@/hooks/usePackages";
