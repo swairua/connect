@@ -56,6 +56,11 @@ const Index = () => {
   const navigate = useNavigate();
   const [showAdminSection, setShowAdminSection] = useState(false);
 
+  // Fetch data from database
+  const { stats: dashboardStats, loading: statsLoading } = useDashboardStats();
+  const { servicePlans, loading: plansLoading } = usePackages();
+  const { stats: ticketStats, loading: ticketsLoading } = useTickets();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-KE", {
       style: "currency",
@@ -64,8 +69,24 @@ const Index = () => {
     }).format(value);
   };
 
-  const dailyPerformance = ((dashboardStats.dailyRevenue / dashboardStats.expectedDailyRevenue) * 100).toFixed(1);
-  const monthlyPerformance = ((dashboardStats.mrr / dashboardStats.expectedMrr) * 100).toFixed(1);
+  // Calculate performance metrics safely
+  const dailyPerformance = dashboardStats && dashboardStats.expected_daily_revenue > 0
+    ? ((dashboardStats.daily_revenue / dashboardStats.expected_daily_revenue) * 100).toFixed(1)
+    : "0";
+
+  const monthlyPerformance = dashboardStats && dashboardStats.expected_mrr > 0
+    ? ((dashboardStats.mrr / dashboardStats.expected_mrr) * 100).toFixed(1)
+    : "0";
+
+  // Generate mock revenue data for charts (TODO: fetch from actual revenue history)
+  const revenueData = useMemo(() => [
+    { month: "Jul", revenue: 850000, expected: 900000, subscribers: 180 },
+    { month: "Aug", revenue: 920000, expected: 950000, subscribers: 195 },
+    { month: "Sep", revenue: 980000, expected: 1000000, subscribers: 210 },
+    { month: "Oct", revenue: 1050000, expected: 1050000, subscribers: 228 },
+    { month: "Nov", revenue: 1120000, expected: 1100000, subscribers: 245 },
+    { month: "Dec", revenue: 1180000, expected: 1200000, subscribers: 258 },
+  ], []);
 
   return (
     <SidebarLayout>
