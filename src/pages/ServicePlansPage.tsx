@@ -160,14 +160,14 @@ const ServicePlansPage = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Plan Name</Label>
-                <Input 
-                  placeholder="e.g., Home Premium" 
+                <Input
+                  placeholder="e.g., Home Premium"
                   defaultValue={editingPlan?.name || ""}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Bandwidth Profile</Label>
-                <Select defaultValue={editingPlan?.bandwidthProfile || ""}>
+                <Select defaultValue={editingPlan?.bandwidth_profile || ""}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select bandwidth profile" />
                   </SelectTrigger>
@@ -183,15 +183,15 @@ const ServicePlansPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Price (KES)</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="5000" 
+                  <Input
+                    type="number"
+                    placeholder="5000"
                     defaultValue={editingPlan?.price || ""}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Billing Cycle</Label>
-                  <Select defaultValue={editingPlan?.billingCycle || "Monthly"}>
+                  <Select defaultValue={editingPlan?.billing_cycle || "Monthly"}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -199,17 +199,16 @@ const ServicePlansPage = () => {
                       <SelectItem value="Weekly">Weekly</SelectItem>
                       <SelectItem value="Monthly">Monthly</SelectItem>
                       <SelectItem value="Quarterly">Quarterly</SelectItem>
-                      <SelectItem value="Yearly">Yearly</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Grace Period (Days)</Label>
-                <Input 
-                  type="number" 
-                  placeholder="5" 
-                  defaultValue={editingPlan?.gracePeriod || ""}
+                <Input
+                  type="number"
+                  placeholder="5"
+                  defaultValue={editingPlan?.grace_period || ""}
                 />
                 <p className="text-xs text-muted-foreground">
                   Days allowed after expiry before suspension
@@ -222,7 +221,7 @@ const ServicePlansPage = () => {
                     Automatically suspend after grace period
                   </p>
                 </div>
-                <Switch defaultChecked={editingPlan?.autoSuspend ?? true} />
+                <Switch defaultChecked={editingPlan?.auto_suspend ?? true} />
               </div>
               <div className="flex gap-2 pt-4">
                 <Button variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
