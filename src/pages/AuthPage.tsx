@@ -269,8 +269,31 @@ const AuthPage = () => {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Debug Button - Test User Creation */}
+                  <div className="pt-4 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full text-xs"
+                      onClick={createTestUser}
+                      disabled={isCreatingTestUser || isLoading}
+                    >
+                      {isCreatingTestUser ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating Test User...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="mr-2 h-4 w-4" />
+                          Create Test User (Debug)
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </CardContent>
-                
+
                 <CardFooter>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
