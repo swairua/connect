@@ -1,9 +1,16 @@
 /**
  * Database Migrations for NetFlow ISP Application
- * Auto-generated SQL based on sidebar modules
+ * Complete PostgreSQL Schema with Full RLS Policies
+ * Synchronized with: supabase/migrations/20260206_000004_complete_schema.sql
  */
 
 export const databaseMigrations = `
+-- ============================================
+-- Complete PostgreSQL Schema Migration
+-- For NetFlow ISP Management System
+-- Date: 2026-02-06
+-- ============================================
+
 -- ============================================
 -- Core Tables
 -- ============================================
@@ -264,24 +271,37 @@ CREATE TABLE IF NOT EXISTS public.unmatched_payments (
 -- Create Indexes for Performance
 -- ============================================
 
+-- Core table indexes
 CREATE INDEX IF NOT EXISTS idx_subscribers_tenant ON subscribers(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_subscribers_status ON subscribers(status);
 CREATE INDEX IF NOT EXISTS idx_subscribers_email ON subscribers(email);
+
 CREATE INDEX IF NOT EXISTS idx_packages_tenant ON packages(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_service_plans_tenant ON service_plans(tenant_id);
+
+-- Billing table indexes
 CREATE INDEX IF NOT EXISTS idx_invoices_tenant ON invoices(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_subscriber ON invoices(subscriber_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+
 CREATE INDEX IF NOT EXISTS idx_payments_tenant ON payments(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_payments_subscriber ON payments(subscriber_id);
 CREATE INDEX IF NOT EXISTS idx_payments_invoice ON payments(invoice_id);
+
+-- Support table indexes
 CREATE INDEX IF NOT EXISTS idx_tickets_tenant ON tickets(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_subscriber ON tickets(subscriber_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
+
+CREATE INDEX IF NOT EXISTS idx_notification_templates_tenant ON notification_templates(tenant_id);
+
 CREATE INDEX IF NOT EXISTS idx_activity_logs_tenant ON activity_logs(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_user ON activity_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_notification_templates_tenant ON notification_templates(tenant_id);
+
+-- Analytics table indexes
 CREATE INDEX IF NOT EXISTS idx_usage_analytics_subscriber ON usage_analytics(subscriber_id);
+
+-- Network table indexes
 CREATE INDEX IF NOT EXISTS idx_network_config_tenant ON network_configurations(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_smartolt_config_tenant ON smartolt_configurations(tenant_id);
 
@@ -308,25 +328,25 @@ ALTER TABLE smartolt_configurations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE unmatched_payments ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
--- Create RLS Policies
+-- Create RLS Policies (Tenant Isolation)
 -- ============================================
 
 -- Subscribers policies
-CREATE POLICY IF NOT EXISTS "Subscribers accessible to tenant members" ON subscribers
+CREATE POLICY IF NOT EXISTS "Subscribers: SELECT by tenant members" ON subscribers
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Subscribers insertable by tenant members" ON subscribers
+CREATE POLICY IF NOT EXISTS "Subscribers: INSERT by tenant members" ON subscribers
   FOR INSERT WITH CHECK (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Subscribers updatable by tenant members" ON subscribers
+CREATE POLICY IF NOT EXISTS "Subscribers: UPDATE by tenant members" ON subscribers
   FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
@@ -334,80 +354,303 @@ CREATE POLICY IF NOT EXISTS "Subscribers updatable by tenant members" ON subscri
   );
 
 -- Packages policies
-CREATE POLICY IF NOT EXISTS "Packages accessible to tenant members" ON packages
+CREATE POLICY IF NOT EXISTS "Packages: SELECT by tenant members" ON packages
   FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Packages: INSERT by tenant members" ON packages
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Packages: UPDATE by tenant members" ON packages
+  FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
 -- Service Plans policies
-CREATE POLICY IF NOT EXISTS "Service plans accessible to tenant members" ON service_plans
+CREATE POLICY IF NOT EXISTS "Service Plans: SELECT by tenant members" ON service_plans
   FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Service Plans: INSERT by tenant members" ON service_plans
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Service Plans: UPDATE by tenant members" ON service_plans
+  FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
 -- Invoices policies
-CREATE POLICY IF NOT EXISTS "Invoices accessible to tenant members" ON invoices
+CREATE POLICY IF NOT EXISTS "Invoices: SELECT by tenant members" ON invoices
   FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Invoices: INSERT by tenant members" ON invoices
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Invoices: UPDATE by tenant members" ON invoices
+  FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
 -- Payments policies
-CREATE POLICY IF NOT EXISTS "Payments accessible to tenant members" ON payments
+CREATE POLICY IF NOT EXISTS "Payments: SELECT by tenant members" ON payments
   FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Payments: INSERT by tenant members" ON payments
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Payments: UPDATE by tenant members" ON payments
+  FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
 -- Tickets policies
-CREATE POLICY IF NOT EXISTS "Tickets accessible to tenant members" ON tickets
+CREATE POLICY IF NOT EXISTS "Tickets: SELECT by tenant members" ON tickets
   FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Tickets: INSERT by tenant members" ON tickets
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Tickets: UPDATE by tenant members" ON tickets
+  FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
 -- Notification Templates policies
-CREATE POLICY IF NOT EXISTS "Notification templates accessible to tenant members" ON notification_templates
+CREATE POLICY IF NOT EXISTS "Notification Templates: SELECT by tenant members" ON notification_templates
   FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Notification Templates: INSERT by tenant members" ON notification_templates
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Notification Templates: UPDATE by tenant members" ON notification_templates
+  FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
 -- Activity Logs policies
-CREATE POLICY IF NOT EXISTS "Activity logs accessible to tenant members" ON activity_logs
+CREATE POLICY IF NOT EXISTS "Activity Logs: SELECT by tenant members" ON activity_logs
   FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Activity Logs: INSERT by tenant members" ON activity_logs
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Revenue Reports policies
+CREATE POLICY IF NOT EXISTS "Revenue Reports: SELECT by tenant members" ON revenue_reports
+  FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Revenue Reports: INSERT by tenant members" ON revenue_reports
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Ageing Reports policies
+CREATE POLICY IF NOT EXISTS "Ageing Reports: SELECT by tenant members" ON ageing_reports
+  FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Ageing Reports: INSERT by tenant members" ON ageing_reports
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Churn Reports policies
+CREATE POLICY IF NOT EXISTS "Churn Reports: SELECT by tenant members" ON churn_reports
+  FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Churn Reports: INSERT by tenant members" ON churn_reports
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Package Performance policies
+CREATE POLICY IF NOT EXISTS "Package Performance: SELECT by tenant members" ON package_performance
+  FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Package Performance: INSERT by tenant members" ON package_performance
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Usage Analytics policies
+CREATE POLICY IF NOT EXISTS "Usage Analytics: SELECT by tenant members" ON usage_analytics
+  FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Usage Analytics: INSERT by tenant members" ON usage_analytics
+  FOR INSERT WITH CHECK (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
 -- Dashboard Stats policies
-CREATE POLICY IF NOT EXISTS "Dashboard stats accessible to tenant members" ON dashboard_stats
+CREATE POLICY IF NOT EXISTS "Dashboard Stats: SELECT by tenant members" ON dashboard_stats
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
--- Network Configuration policies
-CREATE POLICY IF NOT EXISTS "Network configurations accessible to tenant members" ON network_configurations
+CREATE POLICY IF NOT EXISTS "Dashboard Stats: INSERT by tenant members" ON dashboard_stats
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Dashboard Stats: UPDATE by tenant members" ON dashboard_stats
+  FOR UPDATE USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Network Configurations policies
+CREATE POLICY IF NOT EXISTS "Network Configurations: SELECT by tenant members" ON network_configurations
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
--- SmartOLT Configuration policies
-CREATE POLICY IF NOT EXISTS "SmartOLT configurations accessible to tenant members" ON smartolt_configurations
+CREATE POLICY IF NOT EXISTS "Network Configurations: INSERT by tenant members" ON network_configurations
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Network Configurations: UPDATE by tenant members" ON network_configurations
+  FOR UPDATE USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- SmartOLT Configurations policies
+CREATE POLICY IF NOT EXISTS "SmartOLT Configurations: SELECT by tenant members" ON smartolt_configurations
   FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "SmartOLT Configurations: INSERT by tenant members" ON smartolt_configurations
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "SmartOLT Configurations: UPDATE by tenant members" ON smartolt_configurations
+  FOR UPDATE USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Unmatched Payments policies
+CREATE POLICY IF NOT EXISTS "Unmatched Payments: SELECT by tenant members" ON unmatched_payments
+  FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Unmatched Payments: INSERT by tenant members" ON unmatched_payments
+  FOR INSERT WITH CHECK (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
