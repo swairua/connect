@@ -14,7 +14,6 @@ interface AutoMigrationButtonProps {
 export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => {
   const [migrationDone, setMigrationDone] = useState(false);
   const [showManualInstructions, setShowManualInstructions] = useState(false);
-  const { runMigrations, loading } = useAutoMigration();
   const { toast } = useToast();
 
   const handleCopySQL = () => {
