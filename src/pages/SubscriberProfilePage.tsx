@@ -27,9 +27,9 @@ import {
   Ban,
   Plus,
   Download,
+  Loader2,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
-import { subscribers, invoices, tickets, activityLog, usageData } from "@/data/mockData";
 import {
   AreaChart,
   Area,
@@ -42,6 +42,10 @@ import {
   Bar,
   Legend,
 } from "recharts";
+import { useMemo } from "react";
+import { useSubscribers } from "@/hooks/useSubscribers";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useTickets } from "@/hooks/useTickets";
 
 const SubscriberProfilePage = () => {
   const { id } = useParams();
