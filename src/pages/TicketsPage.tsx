@@ -79,7 +79,7 @@ const TicketsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Tickets</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-2xl font-bold">{pageStats.total}</p>
               </div>
               <div className="rounded-lg bg-accent/10 p-3">
                 <MessageSquare className="h-5 w-5 text-accent" />
@@ -92,7 +92,7 @@ const TicketsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Open</p>
-                <p className="text-2xl font-bold text-warning">{stats.open}</p>
+                <p className="text-2xl font-bold text-warning">{pageStats.open}</p>
               </div>
               <div className="rounded-lg bg-warning/10 p-3">
                 <AlertCircle className="h-5 w-5 text-warning" />
@@ -105,7 +105,7 @@ const TicketsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold text-info">{stats.inProgress}</p>
+                <p className="text-2xl font-bold text-info">{pageStats.inProgress}</p>
               </div>
               <div className="rounded-lg bg-info/10 p-3">
                 <Clock className="h-5 w-5 text-info" />
@@ -118,7 +118,7 @@ const TicketsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Closed</p>
-                <p className="text-2xl font-bold text-success">{stats.closed}</p>
+                <p className="text-2xl font-bold text-success">{pageStats.closed}</p>
               </div>
               <div className="rounded-lg bg-success/10 p-3">
                 <CheckCircle className="h-5 w-5 text-success" />
