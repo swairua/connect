@@ -29,35 +29,27 @@ export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => 
     try {
       const result = await runMigrations();
 
-      if (result.success) {
-        const tableCount = result.tablesCreated?.length || 0;
+      // Show instructions to user
+      setShowManualInstructions(true);
 
-        toast({
-          title: 'Database Tables Created',
-          description: `Successfully created or verified ${tableCount} database tables.`,
-        });
+      const tableCount = result.tablesCreated?.length || 0;
 
-        // Log tables created
-        console.log('Tables created/verified:', result.tablesCreated);
+      toast({
+        title: 'Copy SQL and Run in Supabase',
+        description: `Click "Copy SQL to Clipboard" and paste into Supabase SQL Editor to create ${tableCount} tables.`,
+      });
 
-        setMigrationDone(true);
+      // Log tables to be created
+      console.log('Tables to be created:', result.tablesCreated);
 
-        if (onSuccess) {
-          onSuccess();
-        }
-      } else {
-        toast({
-          title: 'Migration Partially Completed',
-          description: result.message || 'Some tables may not have been created.',
-          variant: 'destructive',
-        });
-      }
     } catch (error) {
       toast({
-        title: 'Migration Error',
-        description: error instanceof Error ? error.message : 'Failed to create tables',
+        title: 'Setup Required',
+        description: 'Please use the manual method: Copy SQL and run in Supabase SQL Editor',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
