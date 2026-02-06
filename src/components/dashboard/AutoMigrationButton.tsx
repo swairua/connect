@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAutoMigration } from '@/hooks/useAutoMigration';
 import { useToast } from '@/hooks/use-toast';
-import { Database, CheckCircle, Loader2, AlertCircle, Zap } from 'lucide-react';
+import { Database, CheckCircle, Loader2, AlertCircle, Zap, Copy, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { databaseMigrations } from '@/integrations/supabase/migrations';
 
 interface AutoMigrationButtonProps {
   onSuccess?: () => void;
