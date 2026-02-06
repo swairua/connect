@@ -38,7 +38,10 @@ export const usePayments = (): UsePaymentsReturn => {
   const { user } = useAuth();
 
   const fetchPayments = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('usePayments: No user logged in yet');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -49,9 +52,19 @@ export const usePayments = (): UsePaymentsReturn => {
         .from('tenant_members')
         .select('tenant_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error('Tenant lookup error:', tenantError.message || tenantError);
+        throw tenantError;
+      }
+
+      if (!tenantMembers) {
+        console.warn('No tenant found for user:', user.id);
+        setPayments([]);
+        setUnmatched([]);
+        return;
+      }
 
       // Fetch payments for the tenant
       const { data, error: paymentError } = await supabase
@@ -78,7 +91,10 @@ export const usePayments = (): UsePaymentsReturn => {
         .eq('tenant_id', tenantMembers.tenant_id)
         .order('created_at', { ascending: false });
 
-      if (paymentError) throw paymentError;
+      if (paymentError) {
+        console.error('Payments fetch error:', paymentError.message || paymentError);
+        throw paymentError;
+      }
 
       // Transform data
       const transformedPayments = data?.map(pay => ({
@@ -102,8 +118,10 @@ export const usePayments = (): UsePaymentsReturn => {
       const unmatchedPayments = transformedPayments.filter(p => !p.invoice_id && p.status === 'Success');
       setUnmatched(unmatchedPayments);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch payments'));
-      console.error('Error fetching payments:', err);
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      const error = new Error(`Failed to fetch payments: ${errorMessage}`);
+      setError(error);
+      console.error('Error fetching payments:', errorMessage, err);
     } finally {
       setLoading(false);
     }
