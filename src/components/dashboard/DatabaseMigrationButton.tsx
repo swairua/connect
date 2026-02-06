@@ -12,21 +12,32 @@ interface DatabaseMigrationButtonProps {
 
 export const DatabaseMigrationButton = ({ onSuccess }: DatabaseMigrationButtonProps) => {
   const [migrationDone, setMigrationDone] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [migrationDetails, setMigrationDetails] = useState<any>(null);
   const { initializeDatabase, loading } = useDatabaseMigration();
   const { toast } = useToast();
 
   const handleMigrate = async () => {
     try {
+      setLastError(null);
       const result = await initializeDatabase();
 
       if (result.details) {
         const tableCount = result.details.tables_verified.length;
+        const totalTables = 20; // Total number of tables we're checking for
         const roleText = result.details.is_superadmin ? 'Super Admin' : 'Admin';
 
+        setMigrationDetails(result.details);
+
+        // Show success toast with detailed information
         toast({
-          title: 'Database Initialized',
-          description: `${tableCount} tables verified. You are set as ${roleText}.`,
+          title: 'Database Initialization Complete',
+          description: `${tableCount}/${totalTables} tables verified. You are set as ${roleText}.`,
         });
+
+        // Log detailed information to console for debugging
+        console.log('Migration successful:', result);
+        console.log('Tables verified:', result.details.tables_verified);
 
         setMigrationDone(true);
 
@@ -35,11 +46,29 @@ export const DatabaseMigrationButton = ({ onSuccess }: DatabaseMigrationButtonPr
         }
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize database';
+      setLastError(errorMessage);
+
+      // Provide more helpful error messages
+      let helpfulDescription = errorMessage;
+      if (errorMessage.includes('violates') || errorMessage.includes('constraint')) {
+        helpfulDescription = 'Database constraint error. Check browser console for details. You may need to manually run Supabase migrations.';
+      } else if (errorMessage.includes('permission') || errorMessage.includes('denied')) {
+        helpfulDescription = 'Permission denied. Ensure you have the correct database access permissions.';
+      } else if (errorMessage.includes('not authenticated')) {
+        helpfulDescription = 'Please log in first before initializing the database.';
+      } else if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
+        helpfulDescription = 'Some tables do not exist yet. Run this again, or manually run Supabase migrations from the Supabase dashboard.';
+      }
+
       toast({
-        title: 'Migration Error',
-        description: error instanceof Error ? error.message : 'Failed to initialize database',
+        title: 'Database Initialization Error',
+        description: helpfulDescription,
         variant: 'destructive',
       });
+
+      // Log detailed error to console
+      console.error('Migration failed:', error);
     }
   };
 
