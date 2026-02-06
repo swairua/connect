@@ -19,24 +19,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Eye, Ban, RefreshCw } from "lucide-react";
-import { subscribers, packages } from "@/data/mockData";
+import { Plus, Search, Eye, Ban, RefreshCw, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSubscribers } from "@/hooks/useSubscribers";
+import { usePackages } from "@/hooks/usePackages";
 
 const SubscribersPage = () => {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [packageFilter, setPackageFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const { subscribers, loading } = useSubscribers();
+  const { packages } = usePackages();
 
   const filteredSubscribers = subscribers.filter((sub) => {
     const matchesStatus = statusFilter === "all" || sub.status === statusFilter;
-    const matchesPackage = packageFilter === "all" || sub.package === packageFilter;
+    const matchesPackage = packageFilter === "all" || sub.package_name === packageFilter;
     const matchesSearch =
       sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sub.phone.includes(searchTerm) ||
-      sub.pppoeUsername.toLowerCase().includes(searchTerm.toLowerCase());
+      (sub.pppoe_username || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesPackage && matchesSearch;
   });
 
