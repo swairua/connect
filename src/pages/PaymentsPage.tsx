@@ -14,21 +14,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, CheckCircle, XCircle, Smartphone, RefreshCw, Link, Code, Zap } from "lucide-react";
-import { payments } from "@/data/mockData";
+import { Search, CheckCircle, XCircle, Smartphone, RefreshCw, Link, Code, Zap, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { usePayments } from "@/hooks/usePayments";
 
 const PaymentsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [connectionTested, setConnectionTested] = useState(false);
   const { toast } = useToast();
+  const { payments, loading } = usePayments();
 
   const filteredPayments = payments.filter((payment) => {
     return (
       payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       payment.phone.includes(searchTerm) ||
-      payment.invoiceId.toLowerCase().includes(searchTerm.toLowerCase())
+      (payment.invoice_id || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -57,6 +58,19 @@ const PaymentsPage = () => {
       .reduce((acc, p) => acc + p.amount, 0),
     reconciled: payments.filter((p) => p.reconciled).length,
   };
+
+  if (loading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading payments...</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout>
