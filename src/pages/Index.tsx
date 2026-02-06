@@ -50,6 +50,7 @@ import { useState } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [showAdminSection, setShowAdminSection] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-KE", {
