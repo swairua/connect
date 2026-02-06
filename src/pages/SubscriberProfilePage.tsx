@@ -51,9 +51,37 @@ const SubscriberProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const subscriber = subscribers.find((s) => s.id === id);
-  const subscriberInvoices = invoices.filter((inv) => inv.customerId === id);
-  const subscriberTickets = tickets.filter((t) => t.customerId === id);
+  // Fetch data from database
+  const { subscribers, loading: subscribersLoading } = useSubscribers();
+  const { invoices, loading: invoicesLoading } = useInvoices();
+  const { tickets, loading: ticketsLoading } = useTickets();
+
+  // Find the current subscriber
+  const subscriber = useMemo(() => subscribers.find((s) => s.id === id), [subscribers, id]);
+
+  // Filter invoices and tickets for this subscriber
+  const subscriberInvoices = useMemo(() => invoices.filter((inv) => inv.subscriber_id === id), [invoices, id]);
+  const subscriberTickets = useMemo(() => tickets.filter((t) => t.subscriber_id === id), [tickets, id]);
+
+  // Generate mock activity log (TODO: fetch from database)
+  const activityLog = useMemo(() => [
+    { timestamp: "2024-12-04 08:30:00", event: "Connection established", type: "success" },
+    { timestamp: "2024-12-04 02:15:33", event: "Session timeout - reconnected", type: "warning" },
+    { timestamp: "2024-12-03 23:45:12", event: "Connection established", type: "success" },
+    { timestamp: "2024-12-03 14:22:08", event: "PPPoE authentication successful", type: "success" },
+    { timestamp: "2024-12-02 09:10:45", event: "Router reboot detected", type: "info" },
+  ], []);
+
+  // Generate mock usage data (TODO: fetch from database)
+  const usageData = useMemo(() => [
+    { day: "Mon", upload: 12, download: 85 },
+    { day: "Tue", upload: 15, download: 92 },
+    { day: "Wed", upload: 18, download: 78 },
+    { day: "Thu", upload: 14, download: 105 },
+    { day: "Fri", upload: 22, download: 120 },
+    { day: "Sat", upload: 35, download: 145 },
+    { day: "Sun", upload: 28, download: 132 },
+  ], []);
 
   if (!subscriber) {
     return (
