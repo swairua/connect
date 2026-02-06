@@ -22,7 +22,6 @@ import {
   Download,
   ArrowUpRight,
 } from "lucide-react";
-import { usageData } from "@/data/mockData";
 import {
   AreaChart,
   Area,
@@ -32,6 +31,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useMemo } from "react";
 
 const CustomerPortalPage = () => {
   const customer = {
