@@ -120,7 +120,7 @@ const ReconciliationPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Unmatched Payments</p>
-                <p className="text-2xl font-bold text-warning">{unmatched.length}</p>
+                <p className="text-2xl font-bold text-warning">{displayedUnmatched.length}</p>
               </div>
               <div className="rounded-lg bg-warning/10 p-3">
                 <AlertCircle className="h-5 w-5 text-warning" />
@@ -145,8 +145,8 @@ const ReconciliationPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">High Confidence</p>
-                <p className="text-2xl font-bold text-success">{highConfidenceMatches}</p>
+                <p className="text-sm text-muted-foreground">Processed</p>
+                <p className="text-2xl font-bold text-success">{unmatchedToRemove.length}</p>
               </div>
               <div className="rounded-lg bg-success/10 p-3">
                 <CheckCircle className="h-5 w-5 text-success" />
@@ -160,7 +160,7 @@ const ReconciliationPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">No Match Found</p>
                 <p className="text-2xl font-bold text-destructive">
-                  {unmatched.filter((p) => p.suggestedMatches.length === 0).length}
+                  {noMatches}
                 </p>
               </div>
               <div className="rounded-lg bg-destructive/10 p-3">
