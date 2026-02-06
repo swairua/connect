@@ -406,7 +406,7 @@ const Index = () => {
       </Card>
 
       {/* Status Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4 mb-8">
         <Card className="border-border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -459,6 +459,27 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Admin Section */}
+      <div className="space-y-4">
+        <button
+          onClick={() => setShowAdminSection(!showAdminSection)}
+          className="w-full flex items-center justify-between p-4 border border-dashed border-muted-foreground/30 rounded-lg hover:bg-muted/30 transition-colors"
+        >
+          <span className="text-sm font-medium text-muted-foreground">Admin Tools</span>
+          <ChevronDown
+            className={`h-4 w-4 text-muted-foreground transition-transform ${
+              showAdminSection ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+
+        {showAdminSection && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+            <DatabaseInitButton onDataDeleted={() => setShowAdminSection(false)} />
+          </div>
+        )}
       </div>
     </SidebarLayout>
   );
