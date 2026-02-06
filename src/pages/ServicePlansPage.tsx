@@ -29,9 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, Package, Users, DollarSign, Clock } from "lucide-react";
-import { servicePlans } from "@/data/mockData";
+import { Plus, Edit2, Trash2, Package, Users, DollarSign, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePackages } from "@/hooks/usePackages";
 
 const bandwidthProfiles = [
   { id: "basic", name: "Basic 20Mbps", speed: "20/5 Mbps" },
