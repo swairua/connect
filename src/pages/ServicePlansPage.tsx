@@ -240,71 +240,76 @@ const ServicePlansPage = () => {
       {/* Plans Table */}
       <Card className="border-border shadow-card">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold">Plan Name</TableHead>
-                <TableHead className="font-semibold">Bandwidth Profile</TableHead>
-                <TableHead className="font-semibold">Price</TableHead>
-                <TableHead className="font-semibold">Billing Cycle</TableHead>
-                <TableHead className="font-semibold text-center">Grace Period</TableHead>
-                <TableHead className="font-semibold text-center">Auto-Suspend</TableHead>
-                <TableHead className="font-semibold text-center">Subscribers</TableHead>
-                <TableHead className="font-semibold text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {plans.map((plan) => (
-                <TableRow key={plan.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{plan.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{plan.bandwidthProfile}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">{formatCurrency(plan.price)}</TableCell>
-                  <TableCell>{plan.billingCycle}</TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Clock className="h-3 w-3 text-muted-foreground" />
-                      {plan.gracePeriod} days
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {plan.autoSuspend ? (
-                      <Badge variant="success">Enabled</Badge>
-                    ) : (
-                      <Badge variant="secondary">Disabled</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="text-success font-medium">{plan.activeUsers}</span>
-                    <span className="text-muted-foreground"> / {plan.totalUsers}</span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingPlan(plan);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(plan.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {plansLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : plans.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-sm text-muted-foreground">No service plans found. Create one to get started.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-semibold">Plan Name</TableHead>
+                  <TableHead className="font-semibold">Bandwidth Profile</TableHead>
+                  <TableHead className="font-semibold">Price</TableHead>
+                  <TableHead className="font-semibold">Billing Cycle</TableHead>
+                  <TableHead className="font-semibold text-center">Grace Period</TableHead>
+                  <TableHead className="font-semibold text-center">Auto-Suspend</TableHead>
+                  <TableHead className="font-semibold text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {plans.map((plan) => (
+                  <TableRow key={plan.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">{plan.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{plan.bandwidth_profile}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">{formatCurrency(plan.price)}</TableCell>
+                    <TableCell>{plan.billing_cycle}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        {plan.grace_period} days
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {plan.auto_suspend ? (
+                        <Badge variant="success">Enabled</Badge>
+                      ) : (
+                        <Badge variant="secondary">Disabled</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingPlan(plan);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(plan.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </SidebarLayout>
