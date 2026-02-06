@@ -47,6 +47,7 @@ import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { DatabaseInitButton } from "@/components/dashboard/DatabaseInitButton";
 import { DatabaseMigrationButton } from "@/components/dashboard/DatabaseMigrationButton";
+import { AutoMigrationButton } from "@/components/dashboard/AutoMigrationButton";
 import { useState, useMemo } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { usePackages } from "@/hooks/usePackages";
