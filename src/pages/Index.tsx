@@ -291,32 +291,44 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-warning/10 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-warning">{ticketStats.open}</p>
-                <p className="text-xs text-muted-foreground">Open Tickets</p>
+            {ticketsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
-              <div className="bg-success/10 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-success">{ticketStats.resolvedToday}</p>
-                <p className="text-xs text-muted-foreground">Resolved Today</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-2 border-t border-border">
-              <div className="flex items-center gap-2">
-                <Timer className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Avg SLA Time</span>
-              </div>
-              <span className="text-sm font-medium">{ticketStats.avgSlaTime}</span>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase">By Category</p>
-              {Object.entries(ticketStats.categories).map(([category, count]) => (
-                <div key={category} className="flex items-center justify-between">
-                  <span className="text-sm">{category}</span>
-                  <span className="text-sm font-medium bg-secondary px-2 py-0.5 rounded">{count}</span>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-warning/10 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-warning">{ticketStats?.open || 0}</p>
+                    <p className="text-xs text-muted-foreground">Open Tickets</p>
+                  </div>
+                  <div className="bg-success/10 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-success">{ticketStats?.resolvedToday || 0}</p>
+                    <p className="text-xs text-muted-foreground">Resolved Today</p>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center justify-between py-2 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <Timer className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">In Progress</span>
+                  </div>
+                  <span className="text-sm font-medium">{ticketStats?.inProgress || 0} tickets</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">By Category</p>
+                  {Object.entries(ticketStats?.categories || {}).length > 0 ? (
+                    Object.entries(ticketStats?.categories || {}).map(([category, count]) => (
+                      <div key={category} className="flex items-center justify-between">
+                        <span className="text-sm">{category}</span>
+                        <span className="text-sm font-medium bg-secondary px-2 py-0.5 rounded">{count}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No tickets yet</p>
+                  )}
+                </div>
+              </>
+            )}
             <Button variant="outline" className="w-full" onClick={() => navigate("/tickets")}>
               View All Tickets
             </Button>
