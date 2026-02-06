@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { databaseMigrations } from '@/integrations/supabase/migrations';
 
@@ -7,7 +6,6 @@ interface AutoMigrationResult {
   success: boolean;
   message: string;
   tablesCreated?: string[];
-  errors?: string[];
 }
 
 export const useAutoMigration = () => {
@@ -24,12 +22,13 @@ export const useAutoMigration = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Database migrations require manual setup via Supabase SQL Editor');
+      console.log('Preparing database migrations - copy SQL and run in Supabase SQL Editor');
 
-      // Show user-friendly message with instructions
+      // Simply return the list of tables that will be created
+      // User needs to manually run the SQL in Supabase
       return {
         success: true,
-        message: 'Please complete the setup using Supabase SQL Editor',
+        message: 'Copy the SQL and run it in your Supabase SQL Editor',
         tablesCreated: [
           'subscribers',
           'packages',
@@ -51,11 +50,11 @@ export const useAutoMigration = () => {
         ],
       };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
-      const error = new Error(`Migration failed: ${errorMessage}`);
-      setError(error);
-      console.error('Migration error:', errorMessage, err);
-      throw error;
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const newError = new Error(`Setup error: ${errorMessage}`);
+      setError(newError);
+      console.error('Setup error:', errorMessage);
+      throw newError;
     } finally {
       setLoading(false);
     }
