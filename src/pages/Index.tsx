@@ -102,12 +102,16 @@ const Index = () => {
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-medium text-muted-foreground">Daily Revenue</p>
               <div className="rounded-lg bg-accent/10 p-2">
-                <TrendingUp className="h-4 w-4 text-accent" />
+                {statsLoading ? (
+                  <Loader2 className="h-4 w-4 text-accent animate-spin" />
+                ) : (
+                  <TrendingUp className="h-4 w-4 text-accent" />
+                )}
               </div>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(dashboardStats.dailyRevenue)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(dashboardStats?.daily_revenue || 0)}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Expected: {formatCurrency(dashboardStats.expectedDailyRevenue)}
+              Expected: {formatCurrency(dashboardStats?.expected_daily_revenue || 0)}
             </p>
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs mb-1">
@@ -116,7 +120,7 @@ const Index = () => {
                   {dailyPerformance}%
                 </span>
               </div>
-              <Progress value={Number(dailyPerformance)} className="h-1.5" />
+              <Progress value={Math.min(Number(dailyPerformance), 100)} className="h-1.5" />
             </div>
           </CardContent>
         </Card>
@@ -129,9 +133,9 @@ const Index = () => {
                 <DollarSign className="h-4 w-4 text-success" />
               </div>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(dashboardStats.mrr)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(dashboardStats?.mrr || 0)}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Expected: {formatCurrency(dashboardStats.expectedMrr)}
+              Expected: {formatCurrency(dashboardStats?.expected_mrr || 0)}
             </p>
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs mb-1">
@@ -140,7 +144,7 @@ const Index = () => {
                   {monthlyPerformance}%
                 </span>
               </div>
-              <Progress value={Number(monthlyPerformance)} className="h-1.5" />
+              <Progress value={Math.min(Number(monthlyPerformance), 100)} className="h-1.5" />
             </div>
           </CardContent>
         </Card>
@@ -153,7 +157,7 @@ const Index = () => {
                 <AlertCircle className="h-4 w-4 text-warning" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-warning">{dashboardStats.accountsDue}</p>
+            <p className="text-2xl font-bold text-warning">{dashboardStats?.accounts_due || 0}</p>
             <p className="text-xs text-muted-foreground mt-1">Customers with pending payments</p>
             <p className="text-xs text-accent mt-2 font-medium">Click to view list →</p>
           </CardContent>
@@ -167,8 +171,8 @@ const Index = () => {
                 <Receipt className="h-4 w-4 text-destructive" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-destructive">{formatCurrency(dashboardStats.unpaidAmount)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{dashboardStats.unpaidInvoices} unpaid invoices</p>
+            <p className="text-2xl font-bold text-destructive">{formatCurrency(dashboardStats?.unpaid_amount || 0)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{dashboardStats?.unpaid_invoices || 0} unpaid invoices</p>
           </CardContent>
         </Card>
       </div>
