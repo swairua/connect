@@ -25,32 +25,12 @@ export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => 
     });
   };
 
-  const handleMigrate = async () => {
-    try {
-      const result = await runMigrations();
-
-      // Show instructions to user
-      setShowManualInstructions(true);
-
-      const tableCount = result.tablesCreated?.length || 0;
-
-      toast({
-        title: 'Copy SQL and Run in Supabase',
-        description: `Click "Copy SQL to Clipboard" and paste into Supabase SQL Editor to create ${tableCount} tables.`,
-      });
-
-      // Log tables to be created
-      console.log('Tables to be created:', result.tablesCreated);
-
-    } catch (error) {
-      toast({
-        title: 'Setup Required',
-        description: 'Please use the manual method: Copy SQL and run in Supabase SQL Editor',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleShowInstructions = () => {
+    setShowManualInstructions(!showManualInstructions);
+    toast({
+      title: 'Setup Instructions',
+      description: 'Follow the steps above to create your database tables',
+    });
   };
 
   if (migrationDone) {
