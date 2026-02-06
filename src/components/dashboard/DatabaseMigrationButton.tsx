@@ -168,6 +168,19 @@ export const DatabaseMigrationButton = ({ onSuccess }: DatabaseMigrationButtonPr
           </div>
         </div>
 
+        {lastError && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex gap-3">
+            <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-medium text-destructive mb-1">Last Error:</p>
+              <p className="text-xs text-destructive/80">{lastError}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Check the browser console (F12) for more details. You may need to run migrations manually in your Supabase dashboard.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="bg-info/10 border border-info/20 rounded-lg p-3 flex gap-3">
           <AlertCircle className="h-4 w-4 text-info flex-shrink-0 mt-0.5" />
           <div className="text-xs text-muted-foreground">
