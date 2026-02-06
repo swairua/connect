@@ -30,8 +30,8 @@ import {
   Package,
   Clock,
   BarChart3,
+  Loader2,
 } from "lucide-react";
-import { reportsData, revenueData } from "@/data/mockData";
 import {
   BarChart,
   Bar,
@@ -48,6 +48,9 @@ import {
   Cell,
 } from "recharts";
 import { useToast } from "@/hooks/use-toast";
+import { useMemo } from "react";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useSubscribers } from "@/hooks/useSubscribers";
 
 const COLORS = ["hsl(187, 72%, 43%)", "hsl(142, 76%, 36%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)"];
 
