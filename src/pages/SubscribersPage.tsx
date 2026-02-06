@@ -187,9 +187,11 @@ const SubscribersPage = () => {
       </Card>
 
       {/* Summary */}
-      <div className="mt-4 text-sm text-muted-foreground">
-        Showing {filteredSubscribers.length} of {subscribers.length} subscribers
-      </div>
+      {subscribers.length > 0 && (
+        <div className="mt-4 text-sm text-muted-foreground">
+          Showing {filteredSubscribers.length} of {subscribers.length} subscribers
+        </div>
+      )}
     </SidebarLayout>
   );
 };
