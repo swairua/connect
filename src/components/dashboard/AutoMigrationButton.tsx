@@ -129,21 +129,11 @@ export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => 
 
           <Button
             variant="outline"
-            onClick={handleMigrate}
-            disabled={loading}
+            onClick={handleShowInstructions}
             className="w-full"
           >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <ExternalLink className="h-4 w-4" />
-                Show Instructions Again
-              </>
-            )}
+            <ExternalLink className="h-4 w-4" />
+            {showManualInstructions ? 'Hide' : 'Show'} Instructions
           </Button>
         </div>
 
