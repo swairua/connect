@@ -39,7 +39,10 @@ export const useInvoices = (): UseInvoicesReturn => {
   const { user } = useAuth();
 
   const fetchInvoices = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('useInvoices: No user logged in yet');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -50,9 +53,18 @@ export const useInvoices = (): UseInvoicesReturn => {
         .from('tenant_members')
         .select('tenant_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error('Tenant lookup error:', tenantError.message || tenantError);
+        throw tenantError;
+      }
+
+      if (!tenantMembers) {
+        console.warn('No tenant found for user:', user.id);
+        setInvoices([]);
+        return;
+      }
 
       // Fetch invoices for the tenant
       const { data, error: invoiceError } = await supabase
@@ -74,7 +86,10 @@ export const useInvoices = (): UseInvoicesReturn => {
         .eq('tenant_id', tenantMembers.tenant_id)
         .order('created_date', { ascending: false });
 
-      if (invoiceError) throw invoiceError;
+      if (invoiceError) {
+        console.error('Invoices fetch error:', invoiceError.message || invoiceError);
+        throw invoiceError;
+      }
 
       // Transform data
       const transformedInvoices = data?.map(inv => ({
@@ -91,8 +106,10 @@ export const useInvoices = (): UseInvoicesReturn => {
 
       setInvoices(transformedInvoices);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch invoices'));
-      console.error('Error fetching invoices:', err);
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      const error = new Error(`Failed to fetch invoices: ${errorMessage}`);
+      setError(error);
+      console.error('Error fetching invoices:', errorMessage, err);
     } finally {
       setLoading(false);
     }
