@@ -92,45 +92,64 @@ export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => 
     <Card className="border-border shadow-card bg-gradient-to-br from-accent/5 to-accent/10">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg flex items-center gap-2">
-          <Zap className="h-5 w-5 text-accent" />
-          Auto Create Database Tables
+          <Database className="h-5 w-5 text-accent" />
+          Set Up Database Tables
         </CardTitle>
         <CardDescription>
-          Automatically create all missing tables based on your modules
+          Create all tables required by your application modules
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="bg-white dark:bg-slate-900 rounded-lg p-4 space-y-3 border border-border/50">
-          <div className="space-y-2">
-            <p className="text-sm font-medium">This will create tables for:</p>
-            <div className="grid grid-cols-2 gap-2 ml-2">
-              {[
-                'Subscribers',
-                'Packages & Plans',
-                'Invoices & Payments',
-                'Tickets & Support',
-                'Reports & Analytics',
-                'Network Config',
-              ].map(item => (
-                <div key={item} className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-success" />
-                  <span className="text-xs text-muted-foreground">{item}</span>
-                </div>
-              ))}
+        {/* Setup Instructions - Always Visible */}
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
+          <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-2">Quick Setup (2 minutes)</p>
+              <ol className="space-y-2 text-xs text-amber-800 dark:text-amber-300 list-decimal ml-5">
+                <li>Click <strong>"Copy SQL to Clipboard"</strong></li>
+                <li>Open <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="font-medium underline hover:no-underline">Supabase Dashboard</a></li>
+                <li>Go to <strong>SQL Editor</strong> → <strong>New Query</strong></li>
+                <li>Paste the SQL and click <strong>Run</strong></li>
+                <li>Refresh this page - you're done! ✨</li>
+              </ol>
             </div>
           </div>
         </div>
 
-        <div className="bg-info/10 border border-info/20 rounded-lg p-3 flex gap-3">
-          <AlertCircle className="h-4 w-4 text-info flex-shrink-0 mt-0.5" />
-          <div className="text-xs text-muted-foreground">
-            This is a one-time setup. After running, all tables will be ready to use. Safe to run multiple times.
+        {/* Tables to be created */}
+        <div className="bg-white dark:bg-slate-900 rounded-lg p-4 space-y-3 border border-border/50">
+          <p className="text-sm font-medium">This will create 17 tables for:</p>
+          <div className="grid grid-cols-2 gap-2 ml-2">
+            {[
+              'Subscribers',
+              'Packages & Plans',
+              'Invoices & Payments',
+              'Tickets & Support',
+              'Reports & Analytics',
+              'Network Config',
+            ].map(item => (
+              <div key={item} className="flex items-center gap-2">
+                <CheckCircle className="h-3 w-3 text-success" />
+                <span className="text-xs text-muted-foreground">{item}</span>
+              </div>
+            ))}
           </div>
         </div>
 
+        {/* Action Buttons */}
         <div className="space-y-2">
           <Button
             variant="accent"
+            onClick={handleCopySQL}
+            className="w-full text-base font-medium h-10"
+          >
+            <Copy className="h-4 w-4" />
+            Copy SQL to Clipboard
+          </Button>
+
+          <Button
+            variant="outline"
             onClick={handleMigrate}
             disabled={loading}
             className="w-full"
@@ -138,50 +157,19 @@ export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => 
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Creating Tables...
+                Processing...
               </>
             ) : (
               <>
-                <Zap className="h-4 w-4" />
-                Create All Tables Now
+                <ExternalLink className="h-4 w-4" />
+                Show Instructions Again
               </>
             )}
           </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleCopySQL}
-            className="w-full"
-          >
-            <Copy className="h-4 w-4" />
-            Copy SQL to Clipboard
-          </Button>
-
-          <button
-            onClick={() => setShowManualInstructions(!showManualInstructions)}
-            className="w-full text-xs text-accent hover:text-accent/80 py-2"
-          >
-            {showManualInstructions ? 'Hide' : 'Show'} manual instructions
-          </button>
         </div>
 
-        {showManualInstructions && (
-          <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-xs">
-            <p className="font-medium text-foreground">Manual Setup Instructions:</p>
-            <ol className="space-y-2 list-decimal ml-4 text-muted-foreground">
-              <li>Go to <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline flex items-center gap-1 inline-flex">Supabase Dashboard <ExternalLink className="h-3 w-3" /></a></li>
-              <li>Navigate to <strong>SQL Editor</strong></li>
-              <li>Click <strong>New Query</strong></li>
-              <li>Click <strong>"Copy SQL to Clipboard"</strong> above (or paste the SQL)</li>
-              <li>Paste into the SQL Editor</li>
-              <li>Click <strong>Run</strong></li>
-              <li>Refresh this page when complete</li>
-            </ol>
-          </div>
-        )}
-
-        <p className="text-xs text-muted-foreground text-center">
-          This will create ~17 tables with indexes and RLS policies
+        <p className="text-xs text-muted-foreground text-center pt-2">
+          Includes all indexes and Row Level Security policies
         </p>
       </CardContent>
     </Card>
