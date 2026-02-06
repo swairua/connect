@@ -21,19 +21,20 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Eye, Send, FileText, Calendar, Clock, Zap } from "lucide-react";
-import { invoices } from "@/data/mockData";
+import { Plus, Search, Eye, Send, FileText, Calendar, Clock, Zap, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useInvoices } from "@/hooks/useInvoices";
 
 const BillingPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const { invoices, loading, stats } = useInvoices();
 
   const filteredInvoices = invoices.filter((inv) => {
     const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
     const matchesSearch =
-      inv.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (inv.subscriber?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -45,14 +46,18 @@ const BillingPage = () => {
     }).format(value);
   };
 
-  const stats = {
-    totalInvoices: invoices.length,
-    paid: invoices.filter((i) => i.status === "Paid").length,
-    pending: invoices.filter((i) => i.status === "Pending").length,
-    overdue: invoices.filter((i) => i.status === "Overdue").length,
-    totalAmount: invoices.reduce((acc, inv) => acc + inv.amount, 0),
-    paidAmount: invoices.filter((i) => i.status === "Paid").reduce((acc, inv) => acc + inv.amount, 0),
-  };
+  if (loading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading invoices...</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout>
@@ -168,29 +173,39 @@ const BillingPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id} className="hover:bg-muted/50">
-                      <TableCell className="font-mono font-medium">{invoice.id}</TableCell>
-                      <TableCell>{invoice.customerName}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(invoice.amount)}</TableCell>
-                      <TableCell className="text-muted-foreground">{invoice.dueDate}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={invoice.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {invoice.status !== "Paid" && (
+                  {filteredInvoices.length > 0 ? (
+                    filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice.id} className="hover:bg-muted/50">
+                        <TableCell className="font-mono font-medium">{invoice.invoice_number}</TableCell>
+                        <TableCell>{invoice.subscriber?.name || "Unknown"}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(invoice.amount)}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(invoice.due_date).toLocaleDateString('en-KE')}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={invoice.status} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon">
-                              <Send className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          )}
-                        </div>
+                            {invoice.status !== "Paid" && (
+                              <Button variant="ghost" size="icon">
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        No invoices found
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

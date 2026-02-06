@@ -28,8 +28,9 @@ import {
   Ticket,
   CheckCircle,
   Timer,
+  ChevronDown,
+  Loader2,
 } from "lucide-react";
-import { dashboardStats, revenueData, servicePlans, ticketStats } from "@/data/mockData";
 import {
   AreaChart,
   Area,
@@ -44,9 +45,22 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { DatabaseInitButton } from "@/components/dashboard/DatabaseInitButton";
+import { DatabaseMigrationButton } from "@/components/dashboard/DatabaseMigrationButton";
+import { AutoMigrationButton } from "@/components/dashboard/AutoMigrationButton";
+import { useState, useMemo } from "react";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { usePackages } from "@/hooks/usePackages";
+import { useTickets } from "@/hooks/useTickets";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [showAdminSection, setShowAdminSection] = useState(false);
+
+  // Fetch data from database
+  const { stats: dashboardStats, loading: statsLoading } = useDashboardStats();
+  const { servicePlans, loading: plansLoading } = usePackages();
+  const { stats: ticketStats, loading: ticketsLoading } = useTickets();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-KE", {
@@ -56,8 +70,24 @@ const Index = () => {
     }).format(value);
   };
 
-  const dailyPerformance = ((dashboardStats.dailyRevenue / dashboardStats.expectedDailyRevenue) * 100).toFixed(1);
-  const monthlyPerformance = ((dashboardStats.mrr / dashboardStats.expectedMrr) * 100).toFixed(1);
+  // Calculate performance metrics safely
+  const dailyPerformance = dashboardStats && dashboardStats.expected_daily_revenue > 0
+    ? ((dashboardStats.daily_revenue / dashboardStats.expected_daily_revenue) * 100).toFixed(1)
+    : "0";
+
+  const monthlyPerformance = dashboardStats && dashboardStats.expected_mrr > 0
+    ? ((dashboardStats.mrr / dashboardStats.expected_mrr) * 100).toFixed(1)
+    : "0";
+
+  // Generate mock revenue data for charts (TODO: fetch from actual revenue history)
+  const revenueData = useMemo(() => [
+    { month: "Jul", revenue: 850000, expected: 900000, subscribers: 180 },
+    { month: "Aug", revenue: 920000, expected: 950000, subscribers: 195 },
+    { month: "Sep", revenue: 980000, expected: 1000000, subscribers: 210 },
+    { month: "Oct", revenue: 1050000, expected: 1050000, subscribers: 228 },
+    { month: "Nov", revenue: 1120000, expected: 1100000, subscribers: 245 },
+    { month: "Dec", revenue: 1180000, expected: 1200000, subscribers: 258 },
+  ], []);
 
   return (
     <SidebarLayout>
@@ -73,12 +103,16 @@ const Index = () => {
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-medium text-muted-foreground">Daily Revenue</p>
               <div className="rounded-lg bg-accent/10 p-2">
-                <TrendingUp className="h-4 w-4 text-accent" />
+                {statsLoading ? (
+                  <Loader2 className="h-4 w-4 text-accent animate-spin" />
+                ) : (
+                  <TrendingUp className="h-4 w-4 text-accent" />
+                )}
               </div>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(dashboardStats.dailyRevenue)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(dashboardStats?.daily_revenue || 0)}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Expected: {formatCurrency(dashboardStats.expectedDailyRevenue)}
+              Expected: {formatCurrency(dashboardStats?.expected_daily_revenue || 0)}
             </p>
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs mb-1">
@@ -87,7 +121,7 @@ const Index = () => {
                   {dailyPerformance}%
                 </span>
               </div>
-              <Progress value={Number(dailyPerformance)} className="h-1.5" />
+              <Progress value={Math.min(Number(dailyPerformance), 100)} className="h-1.5" />
             </div>
           </CardContent>
         </Card>
@@ -100,9 +134,9 @@ const Index = () => {
                 <DollarSign className="h-4 w-4 text-success" />
               </div>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(dashboardStats.mrr)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(dashboardStats?.mrr || 0)}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Expected: {formatCurrency(dashboardStats.expectedMrr)}
+              Expected: {formatCurrency(dashboardStats?.expected_mrr || 0)}
             </p>
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs mb-1">
@@ -111,7 +145,7 @@ const Index = () => {
                   {monthlyPerformance}%
                 </span>
               </div>
-              <Progress value={Number(monthlyPerformance)} className="h-1.5" />
+              <Progress value={Math.min(Number(monthlyPerformance), 100)} className="h-1.5" />
             </div>
           </CardContent>
         </Card>
@@ -124,7 +158,7 @@ const Index = () => {
                 <AlertCircle className="h-4 w-4 text-warning" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-warning">{dashboardStats.accountsDue}</p>
+            <p className="text-2xl font-bold text-warning">{dashboardStats?.accounts_due || 0}</p>
             <p className="text-xs text-muted-foreground mt-1">Customers with pending payments</p>
             <p className="text-xs text-accent mt-2 font-medium">Click to view list →</p>
           </CardContent>
@@ -138,8 +172,8 @@ const Index = () => {
                 <Receipt className="h-4 w-4 text-destructive" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-destructive">{formatCurrency(dashboardStats.unpaidAmount)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{dashboardStats.unpaidInvoices} unpaid invoices</p>
+            <p className="text-2xl font-bold text-destructive">{formatCurrency(dashboardStats?.unpaid_amount || 0)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{dashboardStats?.unpaid_invoices || 0} unpaid invoices</p>
           </CardContent>
         </Card>
       </div>
@@ -148,30 +182,30 @@ const Index = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <StatCard
           title="Total Subscribers"
-          value={dashboardStats.totalSubscribers}
-          subtitle={`${dashboardStats.newSignups} new this month`}
+          value={dashboardStats?.total_subscribers || 0}
+          subtitle={`${dashboardStats?.new_signups || 0} new this month`}
           icon={Users}
           variant="accent"
           trend={{ value: 8.2, isPositive: true }}
         />
         <StatCard
           title="Active Subscribers"
-          value={dashboardStats.activeSubscribers}
-          subtitle={`${((dashboardStats.activeSubscribers / dashboardStats.totalSubscribers) * 100).toFixed(0)}% of total`}
+          value={dashboardStats?.active_subscribers || 0}
+          subtitle={`${dashboardStats?.total_subscribers && dashboardStats.total_subscribers > 0 ? ((dashboardStats.active_subscribers / dashboardStats.total_subscribers) * 100).toFixed(0) : 0}% of total`}
           icon={UserCheck}
           variant="success"
         />
         <StatCard
           title="Grace Period"
-          value={dashboardStats.graceSubscribers}
+          value={dashboardStats?.grace_subscribers || 0}
           subtitle="Awaiting payment"
           icon={Clock}
           variant="warning"
         />
         <StatCard
           title="Suspended"
-          value={dashboardStats.suspendedSubscribers}
-          subtitle={`${dashboardStats.expiredSubscribers} expired`}
+          value={dashboardStats?.suspended_subscribers || 0}
+          subtitle={`${dashboardStats?.expired_subscribers || 0} expired`}
           icon={UserX}
           variant="destructive"
         />
@@ -207,41 +241,43 @@ const Index = () => {
       {/* Packages Overview Table */}
       <Card className="mb-8 border-border shadow-card">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Packages Overview</CardTitle>
+          <CardTitle className="text-lg font-semibold">Service Plans Overview</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold">Package Name</TableHead>
-                <TableHead className="font-semibold text-center">Total Users</TableHead>
-                <TableHead className="font-semibold text-center">Active</TableHead>
-                <TableHead className="font-semibold text-center">Expired</TableHead>
-                <TableHead className="font-semibold text-center">Suspended</TableHead>
-                <TableHead className="font-semibold text-right">Monthly Revenue</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {servicePlans.map((plan) => (
-                <TableRow key={plan.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{plan.name}</TableCell>
-                  <TableCell className="text-center">{plan.totalUsers}</TableCell>
-                  <TableCell className="text-center text-success font-medium">{plan.activeUsers}</TableCell>
-                  <TableCell className="text-center text-warning font-medium">{plan.expiredUsers}</TableCell>
-                  <TableCell className="text-center text-destructive font-medium">{plan.suspendedUsers}</TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(plan.activeUsers * plan.price)}</TableCell>
+          {plansLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : servicePlans.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-sm text-muted-foreground">No service plans found. Create one to get started.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-semibold">Plan Name</TableHead>
+                  <TableHead className="font-semibold">Bandwidth</TableHead>
+                  <TableHead className="font-semibold text-right">Price (KES)</TableHead>
+                  <TableHead className="font-semibold">Billing Cycle</TableHead>
+                  <TableHead className="font-semibold text-center">Grace Period</TableHead>
+                  <TableHead className="font-semibold text-center">Auto Suspend</TableHead>
                 </TableRow>
-              ))}
-              <TableRow className="bg-muted/30 font-semibold hover:bg-muted/50">
-                <TableCell>Total</TableCell>
-                <TableCell className="text-center">{servicePlans.reduce((a, b) => a + b.totalUsers, 0)}</TableCell>
-                <TableCell className="text-center text-success">{servicePlans.reduce((a, b) => a + b.activeUsers, 0)}</TableCell>
-                <TableCell className="text-center text-warning">{servicePlans.reduce((a, b) => a + b.expiredUsers, 0)}</TableCell>
-                <TableCell className="text-center text-destructive">{servicePlans.reduce((a, b) => a + b.suspendedUsers, 0)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(servicePlans.reduce((a, b) => a + (b.activeUsers * b.price), 0))}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {servicePlans.map((plan) => (
+                  <TableRow key={plan.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">{plan.name}</TableCell>
+                    <TableCell>{plan.bandwidth_profile}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(plan.price)}</TableCell>
+                    <TableCell>{plan.billing_cycle}</TableCell>
+                    <TableCell className="text-center">{plan.grace_period} days</TableCell>
+                    <TableCell className="text-center">{plan.auto_suspend ? "Yes" : "No"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -256,32 +292,44 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-warning/10 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-warning">{ticketStats.open}</p>
-                <p className="text-xs text-muted-foreground">Open Tickets</p>
+            {ticketsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
-              <div className="bg-success/10 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-success">{ticketStats.resolvedToday}</p>
-                <p className="text-xs text-muted-foreground">Resolved Today</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-2 border-t border-border">
-              <div className="flex items-center gap-2">
-                <Timer className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Avg SLA Time</span>
-              </div>
-              <span className="text-sm font-medium">{ticketStats.avgSlaTime}</span>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase">By Category</p>
-              {Object.entries(ticketStats.categories).map(([category, count]) => (
-                <div key={category} className="flex items-center justify-between">
-                  <span className="text-sm">{category}</span>
-                  <span className="text-sm font-medium bg-secondary px-2 py-0.5 rounded">{count}</span>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-warning/10 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-warning">{ticketStats?.open || 0}</p>
+                    <p className="text-xs text-muted-foreground">Open Tickets</p>
+                  </div>
+                  <div className="bg-success/10 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-success">{ticketStats?.resolvedToday || 0}</p>
+                    <p className="text-xs text-muted-foreground">Resolved Today</p>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center justify-between py-2 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <Timer className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">In Progress</span>
+                  </div>
+                  <span className="text-sm font-medium">{ticketStats?.inProgress || 0} tickets</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">By Category</p>
+                  {Object.entries(ticketStats?.categories || {}).length > 0 ? (
+                    Object.entries(ticketStats?.categories || {}).map(([category, count]) => (
+                      <div key={category} className="flex items-center justify-between">
+                        <span className="text-sm">{category}</span>
+                        <span className="text-sm font-medium bg-secondary px-2 py-0.5 rounded">{count}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No tickets yet</p>
+                  )}
+                </div>
+              </>
+            )}
             <Button variant="outline" className="w-full" onClick={() => navigate("/tickets")}>
               View All Tickets
             </Button>
@@ -402,7 +450,7 @@ const Index = () => {
       </Card>
 
       {/* Status Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4 mb-8">
         <Card className="border-border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -411,7 +459,7 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.activeSubscribers}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardStats?.active_subscribers || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -424,7 +472,7 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Grace Period</p>
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.graceSubscribers}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardStats?.grace_subscribers || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -437,7 +485,7 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Expired</p>
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.expiredSubscribers}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardStats?.expired_subscribers || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -450,11 +498,34 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Suspended</p>
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.suspendedSubscribers}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardStats?.suspended_subscribers || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Admin Section */}
+      <div className="space-y-4">
+        <button
+          onClick={() => setShowAdminSection(!showAdminSection)}
+          className="w-full flex items-center justify-between p-4 border border-dashed border-muted-foreground/30 rounded-lg hover:bg-muted/30 transition-colors"
+        >
+          <span className="text-sm font-medium text-muted-foreground">Admin Tools</span>
+          <ChevronDown
+            className={`h-4 w-4 text-muted-foreground transition-transform ${
+              showAdminSection ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+
+        {showAdminSection && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+            <AutoMigrationButton onSuccess={() => {}} />
+            <DatabaseMigrationButton onSuccess={() => {}} />
+            <DatabaseInitButton onDataDeleted={() => setShowAdminSection(false)} />
+          </div>
+        )}
       </div>
     </SidebarLayout>
   );

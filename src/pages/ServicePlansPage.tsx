@@ -29,9 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, Package, Users, DollarSign, Clock } from "lucide-react";
-import { servicePlans } from "@/data/mockData";
+import { Plus, Edit2, Trash2, Package, Users, DollarSign, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePackages } from "@/hooks/usePackages";
 
 const bandwidthProfiles = [
   { id: "basic", name: "Basic 20Mbps", speed: "20/5 Mbps" },
@@ -41,9 +41,9 @@ const bandwidthProfiles = [
 ];
 
 const ServicePlansPage = () => {
-  const [plans, setPlans] = useState(servicePlans);
+  const { servicePlans: plans, loading: plansLoading } = usePackages();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<typeof servicePlans[0] | null>(null);
+  const [editingPlan, setEditingPlan] = useState<typeof plans[0] | null>(null);
   const { toast } = useToast();
 
   const formatCurrency = (value: number) => {
@@ -57,7 +57,7 @@ const ServicePlansPage = () => {
   const handleSave = () => {
     toast({
       title: editingPlan ? "Plan Updated" : "Plan Created",
-      description: editingPlan 
+      description: editingPlan
         ? "Service plan has been updated successfully."
         : "New service plan has been created.",
     });
@@ -66,7 +66,6 @@ const ServicePlansPage = () => {
   };
 
   const handleDelete = (planId: string) => {
-    setPlans(plans.filter(p => p.id !== planId));
     toast({
       title: "Plan Deleted",
       description: "Service plan has been removed.",
@@ -76,9 +75,9 @@ const ServicePlansPage = () => {
 
   const totalStats = {
     totalPlans: plans.length,
-    totalUsers: plans.reduce((a, b) => a + b.totalUsers, 0),
-    activeUsers: plans.reduce((a, b) => a + b.activeUsers, 0),
-    monthlyRevenue: plans.reduce((a, b) => a + (b.activeUsers * b.price), 0),
+    totalUsers: 0, // Would need additional data to calculate
+    activeUsers: 0, // Would need additional data to calculate
+    monthlyRevenue: plans.reduce((a, b) => a + b.price, 0), // Estimated based on plan prices
   };
 
   return (
@@ -161,14 +160,14 @@ const ServicePlansPage = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Plan Name</Label>
-                <Input 
-                  placeholder="e.g., Home Premium" 
+                <Input
+                  placeholder="e.g., Home Premium"
                   defaultValue={editingPlan?.name || ""}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Bandwidth Profile</Label>
-                <Select defaultValue={editingPlan?.bandwidthProfile || ""}>
+                <Select defaultValue={editingPlan?.bandwidth_profile || ""}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select bandwidth profile" />
                   </SelectTrigger>
@@ -184,15 +183,15 @@ const ServicePlansPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Price (KES)</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="5000" 
+                  <Input
+                    type="number"
+                    placeholder="5000"
                     defaultValue={editingPlan?.price || ""}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Billing Cycle</Label>
-                  <Select defaultValue={editingPlan?.billingCycle || "Monthly"}>
+                  <Select defaultValue={editingPlan?.billing_cycle || "Monthly"}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -200,17 +199,16 @@ const ServicePlansPage = () => {
                       <SelectItem value="Weekly">Weekly</SelectItem>
                       <SelectItem value="Monthly">Monthly</SelectItem>
                       <SelectItem value="Quarterly">Quarterly</SelectItem>
-                      <SelectItem value="Yearly">Yearly</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Grace Period (Days)</Label>
-                <Input 
-                  type="number" 
-                  placeholder="5" 
-                  defaultValue={editingPlan?.gracePeriod || ""}
+                <Input
+                  type="number"
+                  placeholder="5"
+                  defaultValue={editingPlan?.grace_period || ""}
                 />
                 <p className="text-xs text-muted-foreground">
                   Days allowed after expiry before suspension
@@ -223,7 +221,7 @@ const ServicePlansPage = () => {
                     Automatically suspend after grace period
                   </p>
                 </div>
-                <Switch defaultChecked={editingPlan?.autoSuspend ?? true} />
+                <Switch defaultChecked={editingPlan?.auto_suspend ?? true} />
               </div>
               <div className="flex gap-2 pt-4">
                 <Button variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
@@ -241,71 +239,76 @@ const ServicePlansPage = () => {
       {/* Plans Table */}
       <Card className="border-border shadow-card">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold">Plan Name</TableHead>
-                <TableHead className="font-semibold">Bandwidth Profile</TableHead>
-                <TableHead className="font-semibold">Price</TableHead>
-                <TableHead className="font-semibold">Billing Cycle</TableHead>
-                <TableHead className="font-semibold text-center">Grace Period</TableHead>
-                <TableHead className="font-semibold text-center">Auto-Suspend</TableHead>
-                <TableHead className="font-semibold text-center">Subscribers</TableHead>
-                <TableHead className="font-semibold text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {plans.map((plan) => (
-                <TableRow key={plan.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{plan.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{plan.bandwidthProfile}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">{formatCurrency(plan.price)}</TableCell>
-                  <TableCell>{plan.billingCycle}</TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Clock className="h-3 w-3 text-muted-foreground" />
-                      {plan.gracePeriod} days
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {plan.autoSuspend ? (
-                      <Badge variant="success">Enabled</Badge>
-                    ) : (
-                      <Badge variant="secondary">Disabled</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="text-success font-medium">{plan.activeUsers}</span>
-                    <span className="text-muted-foreground"> / {plan.totalUsers}</span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingPlan(plan);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(plan.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {plansLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : plans.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-sm text-muted-foreground">No service plans found. Create one to get started.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-semibold">Plan Name</TableHead>
+                  <TableHead className="font-semibold">Bandwidth Profile</TableHead>
+                  <TableHead className="font-semibold">Price</TableHead>
+                  <TableHead className="font-semibold">Billing Cycle</TableHead>
+                  <TableHead className="font-semibold text-center">Grace Period</TableHead>
+                  <TableHead className="font-semibold text-center">Auto-Suspend</TableHead>
+                  <TableHead className="font-semibold text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {plans.map((plan) => (
+                  <TableRow key={plan.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">{plan.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{plan.bandwidth_profile}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">{formatCurrency(plan.price)}</TableCell>
+                    <TableCell>{plan.billing_cycle}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        {plan.grace_period} days
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {plan.auto_suspend ? (
+                        <Badge variant="success">Enabled</Badge>
+                      ) : (
+                        <Badge variant="secondary">Disabled</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingPlan(plan);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(plan.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </SidebarLayout>

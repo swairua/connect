@@ -22,7 +22,6 @@ import {
   Download,
   ArrowUpRight,
 } from "lucide-react";
-import { usageData } from "@/data/mockData";
 import {
   AreaChart,
   Area,
@@ -32,6 +31,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useMemo } from "react";
 
 const CustomerPortalPage = () => {
   const customer = {
@@ -49,6 +49,17 @@ const CustomerPortalPage = () => {
     { id: "INV-2024-005", amount: 5000, dueDate: "2024-11-15", status: "Paid" as const },
     { id: "INV-2024-004", amount: 5000, dueDate: "2024-10-15", status: "Paid" as const },
   ];
+
+  // Generate usage data for the week (TODO: Fetch from database if available)
+  const usageData = useMemo(() => [
+    { day: "Mon", upload: 12, download: 85 },
+    { day: "Tue", upload: 15, download: 92 },
+    { day: "Wed", upload: 18, download: 78 },
+    { day: "Thu", upload: 14, download: 105 },
+    { day: "Fri", upload: 22, download: 120 },
+    { day: "Sat", upload: 35, download: 145 },
+    { day: "Sun", upload: 28, download: 132 },
+  ], []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-KE", {

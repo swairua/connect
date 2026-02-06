@@ -1,0 +1,108 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Database, CheckCircle, AlertCircle, Copy, ExternalLink } from 'lucide-react';
+import { databaseMigrations } from '@/integrations/supabase/migrations';
+
+interface AutoMigrationButtonProps {
+  onSuccess?: () => void;
+}
+
+export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => {
+  const [showManualInstructions, setShowManualInstructions] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopySQL = () => {
+    navigator.clipboard.writeText(databaseMigrations);
+    toast({
+      title: 'SQL Copied',
+      description: 'Migration SQL copied to clipboard. Paste it in Supabase SQL Editor.',
+    });
+  };
+
+  const handleShowInstructions = () => {
+    setShowManualInstructions(!showManualInstructions);
+    toast({
+      title: 'Setup Instructions',
+      description: 'Follow the steps above to create your database tables',
+    });
+  };
+
+  return (
+    <Card className="border-border shadow-card bg-gradient-to-br from-accent/5 to-accent/10">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Database className="h-5 w-5 text-accent" />
+          Set Up Database Tables
+        </CardTitle>
+        <CardDescription>
+          Create all tables required by your application modules
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Setup Instructions - Always Visible */}
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
+          <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-2">Quick Setup (2 minutes)</p>
+              <ol className="space-y-2 text-xs text-amber-800 dark:text-amber-300 list-decimal ml-5">
+                <li>Click <strong>"Copy SQL to Clipboard"</strong></li>
+                <li>Open <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="font-medium underline hover:no-underline">Supabase Dashboard</a></li>
+                <li>Go to <strong>SQL Editor</strong> → <strong>New Query</strong></li>
+                <li>Paste the SQL and click <strong>Run</strong></li>
+                <li>Refresh this page - you're done! ✨</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        {/* Tables to be created */}
+        <div className="bg-white dark:bg-slate-900 rounded-lg p-4 space-y-3 border border-border/50">
+          <p className="text-sm font-medium">This will create 17 tables for:</p>
+          <div className="grid grid-cols-2 gap-2 ml-2">
+            {[
+              'Subscribers',
+              'Packages & Plans',
+              'Invoices & Payments',
+              'Tickets & Support',
+              'Reports & Analytics',
+              'Network Config',
+            ].map(item => (
+              <div key={item} className="flex items-center gap-2">
+                <CheckCircle className="h-3 w-3 text-success" />
+                <span className="text-xs text-muted-foreground">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="space-y-2">
+          <Button
+            variant="accent"
+            onClick={handleCopySQL}
+            className="w-full text-base font-medium h-10"
+          >
+            <Copy className="h-4 w-4" />
+            Copy SQL to Clipboard
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleShowInstructions}
+            className="w-full"
+          >
+            <ExternalLink className="h-4 w-4" />
+            {showManualInstructions ? 'Hide' : 'Show'} Instructions
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center pt-2">
+          Includes all indexes and Row Level Security policies
+        </p>
+      </CardContent>
+    </Card>
+  );
+};

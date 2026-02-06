@@ -38,16 +38,31 @@ import {
   XCircle,
   Ban,
   Plus,
+  Loader2,
 } from "lucide-react";
-import { unmatchedPayments, invoices, subscribers } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { usePayments } from "@/hooks/usePayments";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useSubscribers } from "@/hooks/useSubscribers";
+import { useMemo } from "react";
 
 const ReconciliationPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [unmatched, setUnmatched] = useState(unmatchedPayments);
-  const [selectedPayment, setSelectedPayment] = useState<typeof unmatchedPayments[0] | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
   const [manualPaymentOpen, setManualPaymentOpen] = useState(false);
   const { toast } = useToast();
+
+  // Fetch data from database
+  const { payments, loading: paymentsLoading } = usePayments();
+  const { invoices, loading: invoicesLoading } = useInvoices();
+  const { subscribers, loading: subscribersLoading } = useSubscribers();
+
+  // Filter unmatched payments (payments without an associated invoice)
+  const unmatched = useMemo(() => {
+    return payments.filter(p => !p.invoice_id || p.invoice_id === '');
+  }, [payments]);
+
+  const [unmatchedToRemove, setUnmatchedToRemove] = useState<string[]>([]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-KE", {
@@ -58,7 +73,7 @@ const ReconciliationPage = () => {
   };
 
   const handleMatch = (paymentId: string, invoiceId: string, customerName: string) => {
-    setUnmatched(unmatched.filter((p) => p.id !== paymentId));
+    setUnmatchedToRemove([...unmatchedToRemove, paymentId]);
     setSelectedPayment(null);
     toast({
       title: "Payment Matched",
@@ -67,13 +82,18 @@ const ReconciliationPage = () => {
   };
 
   const handleMarkUnallocated = (paymentId: string) => {
-    setUnmatched(unmatched.filter((p) => p.id !== paymentId));
+    setUnmatchedToRemove([...unmatchedToRemove, paymentId]);
     setSelectedPayment(null);
     toast({
       title: "Marked as Unallocated",
       description: `Payment ${paymentId} has been marked as unallocated funds.`,
     });
   };
+
+  // Filter out the removed unmatched payments
+  const displayedUnmatched = useMemo(() => {
+    return unmatched.filter(p => !unmatchedToRemove.includes(p.id));
+  }, [unmatched, unmatchedToRemove]);
 
   const handleManualPayment = () => {
     setManualPaymentOpen(false);
@@ -83,10 +103,8 @@ const ReconciliationPage = () => {
     });
   };
 
-  const totalUnmatched = unmatched.reduce((a, b) => a + b.amount, 0);
-  const highConfidenceMatches = unmatched.filter(
-    (p) => p.suggestedMatches.length > 0 && p.suggestedMatches[0].confidence >= 80
-  ).length;
+  const totalUnmatched = displayedUnmatched.reduce((a, b) => a + Number(b.amount), 0);
+  const noMatches = displayedUnmatched.length;
 
   return (
     <SidebarLayout>
@@ -102,7 +120,7 @@ const ReconciliationPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Unmatched Payments</p>
-                <p className="text-2xl font-bold text-warning">{unmatched.length}</p>
+                <p className="text-2xl font-bold text-warning">{displayedUnmatched.length}</p>
               </div>
               <div className="rounded-lg bg-warning/10 p-3">
                 <AlertCircle className="h-5 w-5 text-warning" />
@@ -127,8 +145,8 @@ const ReconciliationPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">High Confidence</p>
-                <p className="text-2xl font-bold text-success">{highConfidenceMatches}</p>
+                <p className="text-sm text-muted-foreground">Processed</p>
+                <p className="text-2xl font-bold text-success">{unmatchedToRemove.length}</p>
               </div>
               <div className="rounded-lg bg-success/10 p-3">
                 <CheckCircle className="h-5 w-5 text-success" />
@@ -142,7 +160,7 @@ const ReconciliationPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">No Match Found</p>
                 <p className="text-2xl font-bold text-destructive">
-                  {unmatched.filter((p) => p.suggestedMatches.length === 0).length}
+                  {noMatches}
                 </p>
               </div>
               <div className="rounded-lg bg-destructive/10 p-3">

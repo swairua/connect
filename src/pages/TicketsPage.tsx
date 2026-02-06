@@ -20,31 +20,45 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MessageSquare, AlertCircle, CheckCircle, Clock } from "lucide-react";
-import { tickets } from "@/data/mockData";
+import { Plus, Search, MessageSquare, AlertCircle, CheckCircle, Clock, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useTickets } from "@/hooks/useTickets";
 
 const TicketsPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const { tickets, loading, stats } = useTickets();
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || ticket.priority === priorityFilter;
     const matchesSearch =
-      ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.ticket_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      (ticket.subscriber_name || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
-  const stats = {
+  const pageStats = {
     total: tickets.length,
-    open: tickets.filter((t) => t.status === "Open").length,
-    inProgress: tickets.filter((t) => t.status === "In Progress").length,
+    open: stats.open,
+    inProgress: stats.inProgress,
     closed: tickets.filter((t) => t.status === "Closed").length,
   };
+
+  if (loading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading tickets...</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout>
@@ -65,7 +79,7 @@ const TicketsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Tickets</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-2xl font-bold">{pageStats.total}</p>
               </div>
               <div className="rounded-lg bg-accent/10 p-3">
                 <MessageSquare className="h-5 w-5 text-accent" />
@@ -78,7 +92,7 @@ const TicketsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Open</p>
-                <p className="text-2xl font-bold text-warning">{stats.open}</p>
+                <p className="text-2xl font-bold text-warning">{pageStats.open}</p>
               </div>
               <div className="rounded-lg bg-warning/10 p-3">
                 <AlertCircle className="h-5 w-5 text-warning" />
@@ -91,7 +105,7 @@ const TicketsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold text-info">{stats.inProgress}</p>
+                <p className="text-2xl font-bold text-info">{pageStats.inProgress}</p>
               </div>
               <div className="rounded-lg bg-info/10 p-3">
                 <Clock className="h-5 w-5 text-info" />
@@ -104,7 +118,7 @@ const TicketsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Closed</p>
-                <p className="text-2xl font-bold text-success">{stats.closed}</p>
+                <p className="text-2xl font-bold text-success">{pageStats.closed}</p>
               </div>
               <div className="rounded-lg bg-success/10 p-3">
                 <CheckCircle className="h-5 w-5 text-success" />
@@ -169,40 +183,54 @@ const TicketsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTickets.map((ticket) => (
-                <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50">
-                  <TableCell className="font-mono font-medium">{ticket.id}</TableCell>
-                  <TableCell>{ticket.customerName}</TableCell>
-                  <TableCell className="max-w-[250px] truncate">{ticket.subject}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        ticket.priority === "High"
-                          ? "destructive"
-                          : ticket.priority === "Medium"
-                          ? "warning"
-                          : "secondary"
-                      }
-                    >
-                      {ticket.priority}
-                    </Badge>
+              {filteredTickets.length > 0 ? (
+                filteredTickets.map((ticket) => (
+                  <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50">
+                    <TableCell className="font-mono font-medium">{ticket.ticket_number}</TableCell>
+                    <TableCell>{ticket.subscriber_name || "Unknown"}</TableCell>
+                    <TableCell className="max-w-[250px] truncate">{ticket.subject}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          ticket.priority === "High"
+                            ? "destructive"
+                            : ticket.priority === "Medium"
+                            ? "warning"
+                            : "secondary"
+                        }
+                      >
+                        {ticket.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={ticket.status} />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(ticket.created_at).toLocaleDateString('en-KE')}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(ticket.updated_at).toLocaleDateString('en-KE')}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    No tickets found
                   </TableCell>
-                  <TableCell>
-                    <StatusBadge status={ticket.status} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{ticket.createdDate}</TableCell>
-                  <TableCell className="text-muted-foreground">{ticket.lastUpdate}</TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
       {/* Summary */}
-      <div className="mt-4 text-sm text-muted-foreground">
-        Showing {filteredTickets.length} of {tickets.length} tickets
-      </div>
+      {tickets.length > 0 && (
+        <div className="mt-4 text-sm text-muted-foreground">
+          Showing {filteredTickets.length} of {tickets.length} tickets
+        </div>
+      )}
     </SidebarLayout>
   );
 };

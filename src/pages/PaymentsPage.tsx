@@ -14,21 +14,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, CheckCircle, XCircle, Smartphone, RefreshCw, Link, Code, Zap } from "lucide-react";
-import { payments } from "@/data/mockData";
+import { Search, CheckCircle, XCircle, Smartphone, RefreshCw, Link, Code, Zap, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { usePayments } from "@/hooks/usePayments";
 
 const PaymentsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [connectionTested, setConnectionTested] = useState(false);
   const { toast } = useToast();
+  const { payments, loading } = usePayments();
 
   const filteredPayments = payments.filter((payment) => {
     return (
       payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       payment.phone.includes(searchTerm) ||
-      payment.invoiceId.toLowerCase().includes(searchTerm.toLowerCase())
+      (payment.invoice_id || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -57,6 +58,19 @@ const PaymentsPage = () => {
       .reduce((acc, p) => acc + p.amount, 0),
     reconciled: payments.filter((p) => p.reconciled).length,
   };
+
+  if (loading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading payments...</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout>
@@ -155,25 +169,35 @@ const PaymentsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPayments.map((payment) => (
-                    <TableRow key={payment.id} className="hover:bg-muted/50">
-                      <TableCell className="font-mono text-sm">{payment.id}</TableCell>
-                      <TableCell className="text-muted-foreground">{payment.phone}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
-                      <TableCell className="font-mono text-sm">{payment.invoiceId}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={payment.status} />
+                  {filteredPayments.length > 0 ? (
+                    filteredPayments.map((payment) => (
+                      <TableRow key={payment.id} className="hover:bg-muted/50">
+                        <TableCell className="font-mono text-sm">{payment.id}</TableCell>
+                        <TableCell className="text-muted-foreground">{payment.phone}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
+                        <TableCell className="font-mono text-sm">{payment.invoice_id || "N/A"}</TableCell>
+                        <TableCell>
+                          <StatusBadge status={payment.status} />
+                        </TableCell>
+                        <TableCell>
+                          {payment.reconciled ? (
+                            <Badge variant="success">Yes</Badge>
+                          ) : (
+                            <Badge variant="secondary">No</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {new Date(payment.created_at).toLocaleString('en-KE')}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        No payments found
                       </TableCell>
-                      <TableCell>
-                        {payment.reconciled ? (
-                          <Badge variant="success">Yes</Badge>
-                        ) : (
-                          <Badge variant="secondary">No</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{payment.timestamp}</TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

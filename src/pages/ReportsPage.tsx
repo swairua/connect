@@ -30,8 +30,8 @@ import {
   Package,
   Clock,
   BarChart3,
+  Loader2,
 } from "lucide-react";
-import { reportsData, revenueData } from "@/data/mockData";
 import {
   BarChart,
   Bar,
@@ -48,12 +48,61 @@ import {
   Cell,
 } from "recharts";
 import { useToast } from "@/hooks/use-toast";
+import { useMemo } from "react";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useSubscribers } from "@/hooks/useSubscribers";
 
 const COLORS = ["hsl(187, 72%, 43%)", "hsl(142, 76%, 36%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)"];
 
 const ReportsPage = () => {
   const [dateRange, setDateRange] = useState("last6months");
   const { toast } = useToast();
+
+  // Fetch data from database
+  const { invoices, loading: invoicesLoading } = useInvoices();
+  const { subscribers, loading: subscribersLoading } = useSubscribers();
+
+  // Generate mock revenue data (TODO: Calculate from actual invoice data)
+  const revenueData = useMemo(() => [
+    { month: "Jul", revenue: 850000, expected: 900000, subscribers: 180 },
+    { month: "Aug", revenue: 920000, expected: 950000, subscribers: 195 },
+    { month: "Sep", revenue: 980000, expected: 1000000, subscribers: 210 },
+    { month: "Oct", revenue: 1050000, expected: 1050000, subscribers: 228 },
+    { month: "Nov", revenue: 1120000, expected: 1100000, subscribers: 245 },
+    { month: "Dec", revenue: 1180000, expected: 1200000, subscribers: 258 },
+  ], []);
+
+  // Generate report data from invoices (TODO: Calculate from actual invoice data)
+  const reportsData = useMemo(() => ({
+    revenueReport: [
+      { month: "Jul 2024", collected: 850000, expected: 900000, variance: -50000 },
+      { month: "Aug 2024", collected: 920000, expected: 950000, variance: -30000 },
+      { month: "Sep 2024", collected: 980000, expected: 1000000, variance: -20000 },
+      { month: "Oct 2024", collected: 1050000, expected: 1050000, variance: 0 },
+      { month: "Nov 2024", collected: 1120000, expected: 1100000, variance: 20000 },
+      { month: "Dec 2024", collected: 1180000, expected: 1200000, variance: -20000 },
+    ],
+    ageingReport: [
+      { range: "0-30 days", count: 15, amount: 87500 },
+      { range: "31-60 days", count: 18, amount: 112500 },
+      { range: "61-90 days", count: 8, amount: 55000 },
+      { range: "90+ days", count: 4, amount: 32500 },
+    ],
+    churnReport: [
+      { month: "Jul 2024", churned: 5, newSignups: 15, netGrowth: 10 },
+      { month: "Aug 2024", churned: 3, newSignups: 18, netGrowth: 15 },
+      { month: "Sep 2024", churned: 4, newSignups: 19, netGrowth: 15 },
+      { month: "Oct 2024", churned: 2, newSignups: 20, netGrowth: 18 },
+      { month: "Nov 2024", churned: 3, newSignups: 20, netGrowth: 17 },
+      { month: "Dec 2024", churned: 2, newSignups: 15, netGrowth: 13 },
+    ],
+    packagePerformance: [
+      { package: "Basic 20Mbps", subscribers: 85, revenue: 212500, churn: 3 },
+      { package: "Premium 50Mbps", subscribers: 120, revenue: 600000, churn: 5 },
+      { package: "Business 100Mbps", subscribers: 38, revenue: 570000, churn: 1 },
+      { package: "Enterprise 200Mbps", subscribers: 15, revenue: 375000, churn: 0 },
+    ],
+  }), []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-KE", {

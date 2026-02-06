@@ -19,24 +19,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Eye, Ban, RefreshCw } from "lucide-react";
-import { subscribers, packages } from "@/data/mockData";
+import { Plus, Search, Eye, Ban, RefreshCw, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSubscribers } from "@/hooks/useSubscribers";
+import { usePackages } from "@/hooks/usePackages";
 
 const SubscribersPage = () => {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [packageFilter, setPackageFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const { subscribers, loading } = useSubscribers();
+  const { packages } = usePackages();
 
   const filteredSubscribers = subscribers.filter((sub) => {
     const matchesStatus = statusFilter === "all" || sub.status === statusFilter;
-    const matchesPackage = packageFilter === "all" || sub.package === packageFilter;
+    const matchesPackage = packageFilter === "all" || sub.package_name === packageFilter;
     const matchesSearch =
       sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sub.phone.includes(searchTerm) ||
-      sub.pppoeUsername.toLowerCase().includes(searchTerm.toLowerCase());
+      (sub.pppoe_username || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesPackage && matchesSearch;
   });
 
@@ -47,6 +50,19 @@ const SubscribersPage = () => {
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  if (loading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading subscribers...</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout>
@@ -118,52 +134,64 @@ const SubscribersPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSubscribers.map((subscriber) => (
-                <TableRow
-                  key={subscriber.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => navigate(`/subscribers/${subscriber.id}`)}
-                >
-                  <TableCell className="font-medium">{subscriber.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{subscriber.phone}</TableCell>
-                  <TableCell>{subscriber.package}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={subscriber.status} />
-                  </TableCell>
-                  <TableCell className={subscriber.outstandingAmount > 0 ? "text-destructive font-medium" : "text-muted-foreground"}>
-                    {formatCurrency(subscriber.outstandingAmount)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{subscriber.lastPaymentDate}</TableCell>
-                  <TableCell className="font-mono text-sm text-muted-foreground">
-                    {subscriber.routerIp}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/subscribers/${subscriber.id}`)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {subscriber.status === "Active" ? (
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                          <Ban className="h-4 w-4" />
+              {filteredSubscribers.length > 0 ? (
+                filteredSubscribers.map((subscriber) => (
+                  <TableRow
+                    key={subscriber.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => navigate(`/subscribers/${subscriber.id}`)}
+                  >
+                    <TableCell className="font-medium">{subscriber.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{subscriber.phone}</TableCell>
+                    <TableCell>{subscriber.package_name || "N/A"}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={subscriber.status} />
+                    </TableCell>
+                    <TableCell className={subscriber.outstanding_amount > 0 ? "text-destructive font-medium" : "text-muted-foreground"}>
+                      {formatCurrency(subscriber.outstanding_amount)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {subscriber.last_payment_date ? new Date(subscriber.last_payment_date).toLocaleDateString('en-KE') : "Never"}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm text-muted-foreground">
+                      {subscriber.router_ip || "N/A"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/subscribers/${subscriber.id}`)}>
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      ) : (
-                        <Button variant="ghost" size="icon" className="text-success hover:text-success">
-                          <RefreshCw className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                        {subscriber.status === "Active" ? (
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="icon" className="text-success hover:text-success">
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    No subscribers found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
       {/* Summary */}
-      <div className="mt-4 text-sm text-muted-foreground">
-        Showing {filteredSubscribers.length} of {subscribers.length} subscribers
-      </div>
+      {subscribers.length > 0 && (
+        <div className="mt-4 text-sm text-muted-foreground">
+          Showing {filteredSubscribers.length} of {subscribers.length} subscribers
+        </div>
+      )}
     </SidebarLayout>
   );
 };

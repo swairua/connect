@@ -1,4 +1,4 @@
-project_id = "dvfvyrrowdmflmlowirp"
+project_id = "sbqvrxrhtbqktoyrhtre"
 
 [functions.test-mikrotik-connection]
 verify_jwt = false
