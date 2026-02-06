@@ -136,24 +136,57 @@ export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => 
           </div>
         </div>
 
-        <Button
-          variant="accent"
-          onClick={handleMigrate}
-          disabled={loading}
-          className="w-full"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Creating Tables...
-            </>
-          ) : (
-            <>
-              <Zap className="h-4 w-4" />
-              Create All Tables Now
-            </>
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button
+            variant="accent"
+            onClick={handleMigrate}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating Tables...
+              </>
+            ) : (
+              <>
+                <Zap className="h-4 w-4" />
+                Create All Tables Now
+              </>
+            )}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleCopySQL}
+            className="w-full"
+          >
+            <Copy className="h-4 w-4" />
+            Copy SQL to Clipboard
+          </Button>
+
+          <button
+            onClick={() => setShowManualInstructions(!showManualInstructions)}
+            className="w-full text-xs text-accent hover:text-accent/80 py-2"
+          >
+            {showManualInstructions ? 'Hide' : 'Show'} manual instructions
+          </button>
+        </div>
+
+        {showManualInstructions && (
+          <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-xs">
+            <p className="font-medium text-foreground">Manual Setup Instructions:</p>
+            <ol className="space-y-2 list-decimal ml-4 text-muted-foreground">
+              <li>Go to <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline flex items-center gap-1 inline-flex">Supabase Dashboard <ExternalLink className="h-3 w-3" /></a></li>
+              <li>Navigate to <strong>SQL Editor</strong></li>
+              <li>Click <strong>New Query</strong></li>
+              <li>Click <strong>"Copy SQL to Clipboard"</strong> above (or paste the SQL)</li>
+              <li>Paste into the SQL Editor</li>
+              <li>Click <strong>Run</strong></li>
+              <li>Refresh this page when complete</li>
+            </ol>
+          </div>
+        )}
 
         <p className="text-xs text-muted-foreground text-center">
           This will create ~17 tables with indexes and RLS policies
