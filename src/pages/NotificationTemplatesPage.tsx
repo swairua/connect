@@ -33,9 +33,10 @@ import {
   Eye,
   Copy,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
-import { notificationTemplates } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { useMemo } from "react";
 
 const categories = ["Onboarding", "Billing", "Account", "Service", "Support"];
 const variablesList = [
