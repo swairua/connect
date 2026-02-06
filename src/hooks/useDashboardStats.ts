@@ -48,7 +48,10 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
   const { user } = useAuth();
 
   const fetchStats = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('useDashboardStats: No user logged in yet');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -59,9 +62,18 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
         .from('tenant_members')
         .select('tenant_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error('Tenant lookup error:', tenantError.message || tenantError);
+        throw tenantError;
+      }
+
+      if (!tenantMembers) {
+        console.warn('No tenant found for user:', user.id);
+        setStats(defaultStats);
+        return;
+      }
 
       // Try to fetch from dashboard_stats table
       const { data: statsData, error: statsError } = await supabase
@@ -113,8 +125,10 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
         setStats(calculatedStats);
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch dashboard stats'));
-      console.error('Error fetching dashboard stats:', err);
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      const error = new Error(`Failed to fetch dashboard stats: ${errorMessage}`);
+      setError(error);
+      console.error('Error fetching dashboard stats:', errorMessage, err);
       setStats(defaultStats);
     } finally {
       setLoading(false);
