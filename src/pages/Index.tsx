@@ -181,30 +181,30 @@ const Index = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <StatCard
           title="Total Subscribers"
-          value={dashboardStats.totalSubscribers}
-          subtitle={`${dashboardStats.newSignups} new this month`}
+          value={dashboardStats?.total_subscribers || 0}
+          subtitle={`${dashboardStats?.new_signups || 0} new this month`}
           icon={Users}
           variant="accent"
           trend={{ value: 8.2, isPositive: true }}
         />
         <StatCard
           title="Active Subscribers"
-          value={dashboardStats.activeSubscribers}
-          subtitle={`${((dashboardStats.activeSubscribers / dashboardStats.totalSubscribers) * 100).toFixed(0)}% of total`}
+          value={dashboardStats?.active_subscribers || 0}
+          subtitle={`${dashboardStats?.total_subscribers && dashboardStats.total_subscribers > 0 ? ((dashboardStats.active_subscribers / dashboardStats.total_subscribers) * 100).toFixed(0) : 0}% of total`}
           icon={UserCheck}
           variant="success"
         />
         <StatCard
           title="Grace Period"
-          value={dashboardStats.graceSubscribers}
+          value={dashboardStats?.grace_subscribers || 0}
           subtitle="Awaiting payment"
           icon={Clock}
           variant="warning"
         />
         <StatCard
           title="Suspended"
-          value={dashboardStats.suspendedSubscribers}
-          subtitle={`${dashboardStats.expiredSubscribers} expired`}
+          value={dashboardStats?.suspended_subscribers || 0}
+          subtitle={`${dashboardStats?.expired_subscribers || 0} expired`}
           icon={UserX}
           variant="destructive"
         />
