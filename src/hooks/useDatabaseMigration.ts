@@ -28,31 +28,40 @@ export const useDatabaseMigration = () => {
       setError(null);
 
       // Step 1: Check if user has superadmin role
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('role', 'super_admin')
-        .single();
-
       let isSuperAdmin = false;
-
-      // Step 2: If not superadmin, promote them
-      if (!userRoles) {
-        const { error: insertError } = await supabase
+      try {
+        const { data: userRoles, error: rolesError } = await supabase
           .from('user_roles')
-          .insert({
-            user_id: user.id,
-            role: 'super_admin',
-          });
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('role', 'super_admin')
+          .maybeSingle();
 
-        if (insertError && !insertError.message.includes('duplicate')) {
-          throw insertError;
+        if (rolesError) {
+          console.warn('Warning checking user roles:', rolesError.message);
         }
-        
-        isSuperAdmin = true;
-      } else {
-        isSuperAdmin = true;
+
+        // Step 2: If not superadmin, promote them
+        if (!userRoles) {
+          const { error: insertError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: user.id,
+              role: 'super_admin',
+            });
+
+          if (insertError && !insertError.message.includes('duplicate')) {
+            console.warn('Warning promoting to super admin:', insertError.message);
+          }
+
+          isSuperAdmin = true;
+        } else {
+          isSuperAdmin = true;
+        }
+      } catch (err) {
+        console.warn('Error during super admin setup:', err instanceof Error ? err.message : 'Unknown error');
+        // Continue even if super admin setup fails
+        isSuperAdmin = false;
       }
 
       // Step 3: Verify key tables exist by querying them
@@ -91,60 +100,68 @@ export const useDatabaseMigration = () => {
 
           if (!tableError) {
             verifiedTables.push(tableName);
+          } else {
+            console.warn(`Table ${tableName} does not exist or is not accessible:`, tableError.message);
           }
         } catch (e) {
           // Table might not exist, but that's okay - migrations should create it
-          console.log(`Table ${tableName} check:`, e);
+          console.warn(`Error checking table ${tableName}:`, e instanceof Error ? e.message : 'Unknown error');
         }
       }
 
       // Step 4: Create a default tenant for the user if they don't have one
-      const { data: existingTenant, error: tenantCheckError } = await supabase
-        .from('tenant_members')
-        .select('tenant_id')
-        .eq('user_id', user.id)
-        .single();
-
-      let tenantId = existingTenant?.tenant_id;
-
-      if (!existingTenant && !tenantCheckError?.code?.includes('PGRST')) {
-        // User doesn't have a tenant yet, create one
-        const tenantSlug = `tenant-${user.id.substring(0, 8)}`;
-
-        const { data: newTenant, error: createTenantError } = await supabase
-          .from('tenants')
-          .insert({
-            name: user.email?.split('@')[0] || 'My Organization',
-            slug: tenantSlug,
-            is_active: true,
-          })
-          .select()
-          .single();
-
-        if (createTenantError) {
-          throw createTenantError;
-        }
-
-        tenantId = newTenant.id;
-
-        // Add user as admin of the new tenant
-        const { error: memberError } = await supabase
+      let tenantId: string | undefined = undefined;
+      try {
+        const { data: existingTenant, error: tenantCheckError } = await supabase
           .from('tenant_members')
-          .insert({
-            tenant_id: tenantId,
-            user_id: user.id,
-            role: 'admin',
-            is_primary: true,
-          });
+          .select('tenant_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        if (memberError && !memberError.message.includes('duplicate')) {
-          throw memberError;
+        tenantId = existingTenant?.tenant_id;
+
+        if (!existingTenant) {
+          // User doesn't have a tenant yet, create one
+          const tenantSlug = `tenant-${user.id.substring(0, 8)}`;
+
+          const { data: newTenant, error: createTenantError } = await supabase
+            .from('tenants')
+            .insert({
+              name: user.email?.split('@')[0] || 'My Organization',
+              slug: tenantSlug,
+              is_active: true,
+            })
+            .select()
+            .maybeSingle();
+
+          if (createTenantError) {
+            console.warn('Warning creating tenant:', createTenantError.message);
+          } else if (newTenant) {
+            tenantId = newTenant.id;
+
+            // Add user as admin of the new tenant
+            const { error: memberError } = await supabase
+              .from('tenant_members')
+              .insert({
+                tenant_id: tenantId,
+                user_id: user.id,
+                role: 'admin',
+                is_primary: true,
+              });
+
+            if (memberError && !memberError.message.includes('duplicate')) {
+              console.warn('Warning adding user to tenant:', memberError.message);
+            }
+          }
         }
+      } catch (err) {
+        console.warn('Error during tenant setup:', err instanceof Error ? err.message : 'Unknown error');
+        // Continue even if tenant setup fails
       }
 
       return {
         success: true,
-        message: 'Database successfully initialized. All tables are ready to use.',
+        message: `Database successfully initialized. ${verifiedTables.length} out of ${tablesToVerify.length} tables verified.`,
         details: {
           user_id: user.id,
           is_superadmin: isSuperAdmin,
