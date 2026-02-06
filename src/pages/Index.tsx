@@ -458,7 +458,7 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.activeSubscribers}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardStats?.active_subscribers || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -471,7 +471,7 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Grace Period</p>
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.graceSubscribers}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardStats?.grace_subscribers || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -484,7 +484,7 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Expired</p>
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.expiredSubscribers}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardStats?.expired_subscribers || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -497,7 +497,7 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Suspended</p>
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.suspendedSubscribers}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardStats?.suspended_subscribers || 0}</p>
               </div>
             </div>
           </CardContent>
