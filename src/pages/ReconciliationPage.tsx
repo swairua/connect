@@ -48,10 +48,21 @@ import { useMemo } from "react";
 
 const ReconciliationPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [unmatched, setUnmatched] = useState(unmatchedPayments);
-  const [selectedPayment, setSelectedPayment] = useState<typeof unmatchedPayments[0] | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
   const [manualPaymentOpen, setManualPaymentOpen] = useState(false);
   const { toast } = useToast();
+
+  // Fetch data from database
+  const { payments, loading: paymentsLoading } = usePayments();
+  const { invoices, loading: invoicesLoading } = useInvoices();
+  const { subscribers, loading: subscribersLoading } = useSubscribers();
+
+  // Filter unmatched payments (payments without an associated invoice)
+  const unmatched = useMemo(() => {
+    return payments.filter(p => !p.invoice_id || p.invoice_id === '');
+  }, [payments]);
+
+  const [unmatchedToRemove, setUnmatchedToRemove] = useState<string[]>([]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-KE", {
