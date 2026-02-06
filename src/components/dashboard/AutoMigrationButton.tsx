@@ -12,7 +12,6 @@ interface AutoMigrationButtonProps {
 }
 
 export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => {
-  const [migrationDone, setMigrationDone] = useState(false);
   const [showManualInstructions, setShowManualInstructions] = useState(false);
   const { toast } = useToast();
 
@@ -31,41 +30,6 @@ export const AutoMigrationButton = ({ onSuccess }: AutoMigrationButtonProps) => 
       description: 'Follow the steps above to create your database tables',
     });
   };
-
-  if (migrationDone) {
-    return (
-      <Card className="border-success/20 bg-success/5">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2 text-success">
-            <CheckCircle className="h-5 w-5" />
-            Tables Ready
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              All database tables have been created successfully.
-            </p>
-            <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc">
-              <li>Subscribers & Service Plans</li>
-              <li>Billing & Payments</li>
-              <li>Tickets & Support</li>
-              <li>Reports & Analytics</li>
-              <li>Network Configuration</li>
-              <li>All indexes and RLS policies enabled</li>
-            </ul>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setMigrationDone(false)}
-            className="w-full"
-          >
-            Run Again
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="border-border shadow-card bg-gradient-to-br from-accent/5 to-accent/10">
