@@ -240,41 +240,43 @@ const Index = () => {
       {/* Packages Overview Table */}
       <Card className="mb-8 border-border shadow-card">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Packages Overview</CardTitle>
+          <CardTitle className="text-lg font-semibold">Service Plans Overview</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold">Package Name</TableHead>
-                <TableHead className="font-semibold text-center">Total Users</TableHead>
-                <TableHead className="font-semibold text-center">Active</TableHead>
-                <TableHead className="font-semibold text-center">Expired</TableHead>
-                <TableHead className="font-semibold text-center">Suspended</TableHead>
-                <TableHead className="font-semibold text-right">Monthly Revenue</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {servicePlans.map((plan) => (
-                <TableRow key={plan.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{plan.name}</TableCell>
-                  <TableCell className="text-center">{plan.totalUsers}</TableCell>
-                  <TableCell className="text-center text-success font-medium">{plan.activeUsers}</TableCell>
-                  <TableCell className="text-center text-warning font-medium">{plan.expiredUsers}</TableCell>
-                  <TableCell className="text-center text-destructive font-medium">{plan.suspendedUsers}</TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(plan.activeUsers * plan.price)}</TableCell>
+          {plansLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : servicePlans.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-sm text-muted-foreground">No service plans found. Create one to get started.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-semibold">Plan Name</TableHead>
+                  <TableHead className="font-semibold">Bandwidth</TableHead>
+                  <TableHead className="font-semibold text-right">Price (KES)</TableHead>
+                  <TableHead className="font-semibold">Billing Cycle</TableHead>
+                  <TableHead className="font-semibold text-center">Grace Period</TableHead>
+                  <TableHead className="font-semibold text-center">Auto Suspend</TableHead>
                 </TableRow>
-              ))}
-              <TableRow className="bg-muted/30 font-semibold hover:bg-muted/50">
-                <TableCell>Total</TableCell>
-                <TableCell className="text-center">{servicePlans.reduce((a, b) => a + b.totalUsers, 0)}</TableCell>
-                <TableCell className="text-center text-success">{servicePlans.reduce((a, b) => a + b.activeUsers, 0)}</TableCell>
-                <TableCell className="text-center text-warning">{servicePlans.reduce((a, b) => a + b.expiredUsers, 0)}</TableCell>
-                <TableCell className="text-center text-destructive">{servicePlans.reduce((a, b) => a + b.suspendedUsers, 0)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(servicePlans.reduce((a, b) => a + (b.activeUsers * b.price), 0))}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {servicePlans.map((plan) => (
+                  <TableRow key={plan.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">{plan.name}</TableCell>
+                    <TableCell>{plan.bandwidth_profile}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(plan.price)}</TableCell>
+                    <TableCell>{plan.billing_cycle}</TableCell>
+                    <TableCell className="text-center">{plan.grace_period} days</TableCell>
+                    <TableCell className="text-center">{plan.auto_suspend ? "Yes" : "No"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
