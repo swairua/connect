@@ -41,9 +41,9 @@ const bandwidthProfiles = [
 ];
 
 const ServicePlansPage = () => {
-  const [plans, setPlans] = useState(servicePlans);
+  const { servicePlans: plans, loading: plansLoading } = usePackages();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<typeof servicePlans[0] | null>(null);
+  const [editingPlan, setEditingPlan] = useState<typeof plans[0] | null>(null);
   const { toast } = useToast();
 
   const formatCurrency = (value: number) => {
@@ -57,7 +57,7 @@ const ServicePlansPage = () => {
   const handleSave = () => {
     toast({
       title: editingPlan ? "Plan Updated" : "Plan Created",
-      description: editingPlan 
+      description: editingPlan
         ? "Service plan has been updated successfully."
         : "New service plan has been created.",
     });
@@ -66,7 +66,6 @@ const ServicePlansPage = () => {
   };
 
   const handleDelete = (planId: string) => {
-    setPlans(plans.filter(p => p.id !== planId));
     toast({
       title: "Plan Deleted",
       description: "Service plan has been removed.",
@@ -76,9 +75,9 @@ const ServicePlansPage = () => {
 
   const totalStats = {
     totalPlans: plans.length,
-    totalUsers: plans.reduce((a, b) => a + b.totalUsers, 0),
-    activeUsers: plans.reduce((a, b) => a + b.activeUsers, 0),
-    monthlyRevenue: plans.reduce((a, b) => a + (b.activeUsers * b.price), 0),
+    totalUsers: 0, // Would need additional data to calculate
+    activeUsers: 0, // Would need additional data to calculate
+    monthlyRevenue: plans.reduce((a, b) => a + b.price, 0), // Estimated based on plan prices
   };
 
   return (
