@@ -73,6 +73,9 @@ export const DatabaseMigrationButton = ({ onSuccess }: DatabaseMigrationButtonPr
   };
 
   if (migrationDone) {
+    const tableCount = migrationDetails?.tables_verified?.length || 0;
+    const isSuperAdmin = migrationDetails?.is_superadmin || false;
+
     return (
       <Card className="border-success/20 bg-success/5">
         <CardHeader>
@@ -84,17 +87,40 @@ export const DatabaseMigrationButton = ({ onSuccess }: DatabaseMigrationButtonPr
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Your database has been successfully initialized with all required tables.
+              Your database has been successfully initialized.
             </p>
             <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc">
-              <li>All tables created and verified</li>
-              <li>Your account has been set as Super Admin</li>
+              <li>{tableCount} out of 20 tables verified and accessible</li>
+              <li>Your account has been set as {isSuperAdmin ? 'Super Admin' : 'Admin'}</li>
               <li>Ready to add subscribers, invoices, and other data</li>
+              {tableCount < 20 && (
+                <li className="text-yellow-700 dark:text-yellow-500">
+                  {20 - tableCount} tables not yet verified - migrations may still be pending
+                </li>
+              )}
             </ul>
           </div>
+
+          {migrationDetails?.tables_verified && migrationDetails.tables_verified.length > 0 && (
+            <div className="bg-white dark:bg-slate-900 rounded-lg p-3 border border-success/20">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Verified Tables:</p>
+              <div className="flex flex-wrap gap-2">
+                {migrationDetails.tables_verified.map((table: string) => (
+                  <Badge key={table} variant="outline" className="text-xs">
+                    {table}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Button
             variant="outline"
-            onClick={() => setMigrationDone(false)}
+            onClick={() => {
+              setMigrationDone(false);
+              setMigrationDetails(null);
+              setLastError(null);
+            }}
             className="w-full"
           >
             Run Again
