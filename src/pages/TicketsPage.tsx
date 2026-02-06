@@ -183,31 +183,43 @@ const TicketsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTickets.map((ticket) => (
-                <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50">
-                  <TableCell className="font-mono font-medium">{ticket.id}</TableCell>
-                  <TableCell>{ticket.customerName}</TableCell>
-                  <TableCell className="max-w-[250px] truncate">{ticket.subject}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        ticket.priority === "High"
-                          ? "destructive"
-                          : ticket.priority === "Medium"
-                          ? "warning"
-                          : "secondary"
-                      }
-                    >
-                      {ticket.priority}
-                    </Badge>
+              {filteredTickets.length > 0 ? (
+                filteredTickets.map((ticket) => (
+                  <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50">
+                    <TableCell className="font-mono font-medium">{ticket.ticket_number}</TableCell>
+                    <TableCell>{ticket.subscriber_name || "Unknown"}</TableCell>
+                    <TableCell className="max-w-[250px] truncate">{ticket.subject}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          ticket.priority === "High"
+                            ? "destructive"
+                            : ticket.priority === "Medium"
+                            ? "warning"
+                            : "secondary"
+                        }
+                      >
+                        {ticket.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={ticket.status} />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(ticket.created_at).toLocaleDateString('en-KE')}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(ticket.updated_at).toLocaleDateString('en-KE')}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    No tickets found
                   </TableCell>
-                  <TableCell>
-                    <StatusBadge status={ticket.status} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{ticket.createdDate}</TableCell>
-                  <TableCell className="text-muted-foreground">{ticket.lastUpdate}</TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
