@@ -392,6 +392,78 @@ ALTER TABLE unmatched_payments ENABLE ROW LEVEL SECURITY;
 -- Create RLS Policies (Tenant Isolation)
 -- ============================================
 
+-- Tenants policies
+CREATE POLICY IF NOT EXISTS "Tenants: SELECT by tenant members" ON tenants
+  FOR SELECT USING (
+    id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Tenants: INSERT by super admin" ON tenants
+  FOR INSERT WITH CHECK (
+    auth.uid() IN (
+      SELECT user_id FROM user_roles WHERE role = 'super_admin'
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Tenants: UPDATE by tenant admins" ON tenants
+  FOR UPDATE USING (
+    id IN (
+      SELECT tenant_id FROM tenant_members
+      WHERE user_id = auth.uid() AND role = 'admin'
+    )
+  );
+
+-- Profiles policies
+CREATE POLICY IF NOT EXISTS "Profiles: SELECT own profile" ON profiles
+  FOR SELECT USING (id = auth.uid() OR auth.uid() IN (SELECT user_id FROM user_roles WHERE role = 'super_admin'));
+
+CREATE POLICY IF NOT EXISTS "Profiles: UPDATE own profile" ON profiles
+  FOR UPDATE USING (id = auth.uid());
+
+CREATE POLICY IF NOT EXISTS "Profiles: INSERT on signup" ON profiles
+  FOR INSERT WITH CHECK (id = auth.uid());
+
+-- User Roles policies (super admin only)
+CREATE POLICY IF NOT EXISTS "User Roles: SELECT by super admin" ON user_roles
+  FOR SELECT USING (
+    auth.uid() IN (
+      SELECT user_id FROM user_roles WHERE role = 'super_admin'
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "User Roles: INSERT by super admin" ON user_roles
+  FOR INSERT WITH CHECK (
+    auth.uid() IN (
+      SELECT user_id FROM user_roles WHERE role = 'super_admin'
+    )
+  );
+
+-- Tenant Members policies
+CREATE POLICY IF NOT EXISTS "Tenant Members: SELECT by tenant members" ON tenant_members
+  FOR SELECT USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Tenant Members: INSERT by tenant admins" ON tenant_members
+  FOR INSERT WITH CHECK (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members
+      WHERE user_id = auth.uid() AND role = 'admin'
+    )
+  );
+
+CREATE POLICY IF NOT EXISTS "Tenant Members: UPDATE by tenant admins" ON tenant_members
+  FOR UPDATE USING (
+    tenant_id IN (
+      SELECT tenant_id FROM tenant_members
+      WHERE user_id = auth.uid() AND role = 'admin'
+    )
+  );
+
 -- Subscribers policies
 CREATE POLICY IF NOT EXISTS "Subscribers: SELECT by tenant members" ON subscribers
   FOR SELECT USING (
