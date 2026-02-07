@@ -551,21 +551,24 @@ CREATE POLICY "Service Plans: UPDATE by tenant members" ON service_plans
   );
 
 -- Invoices policies
-CREATE POLICY IF NOT EXISTS "Invoices: SELECT by tenant members" ON invoices
+DROP POLICY IF EXISTS "Invoices: SELECT by tenant members" ON invoices;
+CREATE POLICY "Invoices: SELECT by tenant members" ON invoices
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Invoices: INSERT by tenant members" ON invoices
+DROP POLICY IF EXISTS "Invoices: INSERT by tenant members" ON invoices;
+CREATE POLICY "Invoices: INSERT by tenant members" ON invoices
   FOR INSERT WITH CHECK (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Invoices: UPDATE by tenant members" ON invoices
+DROP POLICY IF EXISTS "Invoices: UPDATE by tenant members" ON invoices;
+CREATE POLICY "Invoices: UPDATE by tenant members" ON invoices
   FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
