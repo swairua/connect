@@ -364,6 +364,12 @@ CREATE INDEX IF NOT EXISTS idx_smartolt_config_tenant ON smartolt_configurations
 -- Enable Row Level Security
 -- ============================================
 
+-- Core auth tables
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenant_members ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE packages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE service_plans ENABLE ROW LEVEL SECURITY;
