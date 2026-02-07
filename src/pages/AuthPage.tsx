@@ -235,7 +235,14 @@ const AuthPage = () => {
                   <CardDescription className="text-center">
                     Enter your credentials to access your dashboard
                   </CardDescription>
-                  
+
+                  {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                      <p className="font-semibold">Error:</p>
+                      <p className="mt-1 break-words font-mono text-xs">{error}</p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <Input
