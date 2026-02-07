@@ -1,10 +1,3 @@
-/**
- * Database Migrations for NetFlow ISP Application
- * Complete PostgreSQL Schema with Full RLS Policies
- * Synchronized with: supabase/migrations/20260206_000004_complete_schema.sql
- */
-
-export const databaseMigrations = `
 -- ============================================
 -- Complete PostgreSQL Schema Migration
 -- For NetFlow ISP Management System
@@ -655,4 +648,3 @@ CREATE POLICY IF NOT EXISTS "Unmatched Payments: INSERT by tenant members" ON un
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
-`;
