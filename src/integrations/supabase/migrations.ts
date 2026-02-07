@@ -393,21 +393,24 @@ ALTER TABLE unmatched_payments ENABLE ROW LEVEL SECURITY;
 -- ============================================
 
 -- Tenants policies
-CREATE POLICY IF NOT EXISTS "Tenants: SELECT by tenant members" ON tenants
+DROP POLICY IF EXISTS "Tenants: SELECT by tenant members" ON tenants;
+CREATE POLICY "Tenants: SELECT by tenant members" ON tenants
   FOR SELECT USING (
     id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Tenants: INSERT by super admin" ON tenants
+DROP POLICY IF EXISTS "Tenants: INSERT by super admin" ON tenants;
+CREATE POLICY "Tenants: INSERT by super admin" ON tenants
   FOR INSERT WITH CHECK (
     auth.uid() IN (
       SELECT user_id FROM user_roles WHERE role = 'super_admin'
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Tenants: UPDATE by tenant admins" ON tenants
+DROP POLICY IF EXISTS "Tenants: UPDATE by tenant admins" ON tenants;
+CREATE POLICY "Tenants: UPDATE by tenant admins" ON tenants
   FOR UPDATE USING (
     id IN (
       SELECT tenant_id FROM tenant_members
@@ -416,24 +419,29 @@ CREATE POLICY IF NOT EXISTS "Tenants: UPDATE by tenant admins" ON tenants
   );
 
 -- Profiles policies
-CREATE POLICY IF NOT EXISTS "Profiles: SELECT own profile" ON profiles
+DROP POLICY IF EXISTS "Profiles: SELECT own profile" ON profiles;
+CREATE POLICY "Profiles: SELECT own profile" ON profiles
   FOR SELECT USING (id = auth.uid() OR auth.uid() IN (SELECT user_id FROM user_roles WHERE role = 'super_admin'));
 
-CREATE POLICY IF NOT EXISTS "Profiles: UPDATE own profile" ON profiles
+DROP POLICY IF EXISTS "Profiles: UPDATE own profile" ON profiles;
+CREATE POLICY "Profiles: UPDATE own profile" ON profiles
   FOR UPDATE USING (id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "Profiles: INSERT on signup" ON profiles
+DROP POLICY IF EXISTS "Profiles: INSERT on signup" ON profiles;
+CREATE POLICY "Profiles: INSERT on signup" ON profiles
   FOR INSERT WITH CHECK (id = auth.uid());
 
 -- User Roles policies (super admin only)
-CREATE POLICY IF NOT EXISTS "User Roles: SELECT by super admin" ON user_roles
+DROP POLICY IF EXISTS "User Roles: SELECT by super admin" ON user_roles;
+CREATE POLICY "User Roles: SELECT by super admin" ON user_roles
   FOR SELECT USING (
     auth.uid() IN (
       SELECT user_id FROM user_roles WHERE role = 'super_admin'
     )
   );
 
-CREATE POLICY IF NOT EXISTS "User Roles: INSERT by super admin" ON user_roles
+DROP POLICY IF EXISTS "User Roles: INSERT by super admin" ON user_roles;
+CREATE POLICY "User Roles: INSERT by super admin" ON user_roles
   FOR INSERT WITH CHECK (
     auth.uid() IN (
       SELECT user_id FROM user_roles WHERE role = 'super_admin'
@@ -441,14 +449,16 @@ CREATE POLICY IF NOT EXISTS "User Roles: INSERT by super admin" ON user_roles
   );
 
 -- Tenant Members policies
-CREATE POLICY IF NOT EXISTS "Tenant Members: SELECT by tenant members" ON tenant_members
+DROP POLICY IF EXISTS "Tenant Members: SELECT by tenant members" ON tenant_members;
+CREATE POLICY "Tenant Members: SELECT by tenant members" ON tenant_members
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Tenant Members: INSERT by tenant admins" ON tenant_members
+DROP POLICY IF EXISTS "Tenant Members: INSERT by tenant admins" ON tenant_members;
+CREATE POLICY "Tenant Members: INSERT by tenant admins" ON tenant_members
   FOR INSERT WITH CHECK (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members
@@ -456,7 +466,8 @@ CREATE POLICY IF NOT EXISTS "Tenant Members: INSERT by tenant admins" ON tenant_
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Tenant Members: UPDATE by tenant admins" ON tenant_members
+DROP POLICY IF EXISTS "Tenant Members: UPDATE by tenant admins" ON tenant_members;
+CREATE POLICY "Tenant Members: UPDATE by tenant admins" ON tenant_members
   FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members
@@ -465,7 +476,8 @@ CREATE POLICY IF NOT EXISTS "Tenant Members: UPDATE by tenant admins" ON tenant_
   );
 
 -- Subscribers policies
-CREATE POLICY IF NOT EXISTS "Subscribers: SELECT by tenant members" ON subscribers
+DROP POLICY IF EXISTS "Subscribers: SELECT by tenant members" ON subscribers;
+CREATE POLICY "Subscribers: SELECT by tenant members" ON subscribers
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
