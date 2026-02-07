@@ -390,11 +390,8 @@ ALTER TABLE unmatched_payments ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- Create RLS Policies (Tenant Isolation)
+-- Note: RLS policies will be created in separate migrations
 -- ============================================
-
--- Tenants policies
-DROP POLICY IF EXISTS "Tenants: SELECT by tenant members" ON tenants;
-CREATE POLICY "Tenants: SELECT by tenant members" ON tenants
   FOR SELECT USING (
     id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
