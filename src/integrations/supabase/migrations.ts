@@ -576,7 +576,8 @@ CREATE POLICY "Invoices: UPDATE by tenant members" ON invoices
   );
 
 -- Payments policies
-DROP POLICY IF EXISTS "Payments: SELECT by tenant members" ON payments
+DROP POLICY IF EXISTS "Payments: SELECT by tenant members" ON payments;
+CREATE POLICY "Payments: SELECT by tenant members" ON payments
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
