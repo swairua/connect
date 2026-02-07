@@ -484,14 +484,16 @@ CREATE POLICY "Subscribers: SELECT by tenant members" ON subscribers
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Subscribers: INSERT by tenant members" ON subscribers
+DROP POLICY IF EXISTS "Subscribers: INSERT by tenant members" ON subscribers;
+CREATE POLICY "Subscribers: INSERT by tenant members" ON subscribers
   FOR INSERT WITH CHECK (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Subscribers: UPDATE by tenant members" ON subscribers
+DROP POLICY IF EXISTS "Subscribers: UPDATE by tenant members" ON subscribers;
+CREATE POLICY "Subscribers: UPDATE by tenant members" ON subscribers
   FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
@@ -499,7 +501,8 @@ CREATE POLICY IF NOT EXISTS "Subscribers: UPDATE by tenant members" ON subscribe
   );
 
 -- Packages policies
-CREATE POLICY IF NOT EXISTS "Packages: SELECT by tenant members" ON packages
+DROP POLICY IF EXISTS "Packages: SELECT by tenant members" ON packages;
+CREATE POLICY "Packages: SELECT by tenant members" ON packages
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
