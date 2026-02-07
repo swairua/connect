@@ -318,6 +318,14 @@ CREATE TABLE IF NOT EXISTS public.unmatched_payments (
 -- Create Indexes for Performance
 -- ============================================
 
+-- Core authentication table indexes
+CREATE INDEX IF NOT EXISTS idx_tenants_slug ON tenants(slug);
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_tenant_members_tenant ON tenant_members(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_tenant_members_user ON tenant_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_tenant_members_tenant_user ON tenant_members(tenant_id, user_id);
+
 -- Core table indexes
 CREATE INDEX IF NOT EXISTS idx_subscribers_tenant ON subscribers(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_subscribers_status ON subscribers(status);
