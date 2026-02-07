@@ -29,10 +29,11 @@ const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isCreatingTestUser, setIsCreatingTestUser] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  // Login form state - pre-filled with test credentials
+  const [loginEmail, setLoginEmail] = useState("gichukisimon@gmail.com");
+  const [loginPassword, setLoginPassword] = useState("Password123");
   
   // Signup form state
   const [signupEmail, setSignupEmail] = useState("");
