@@ -113,41 +113,47 @@ const AuthPage = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setError(null);
+
     const validation = loginSchema.safeParse({
       email: loginEmail,
       password: loginPassword,
     });
 
     if (!validation.success) {
+      const errorMsg = validation.error.errors[0].message;
+      setError(errorMsg);
       toast({
         title: "Validation Error",
-        description: validation.error.errors[0].message,
+        description: errorMsg,
         variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
-    
+
     const { error } = await signIn(loginEmail, loginPassword);
-    
+
     if (error) {
+      const errorMsg = error.message === "Invalid login credentials"
+        ? "Invalid email or password. Please try again."
+        : `${error.message}`;
+      setError(errorMsg);
       toast({
         title: "Login Failed",
-        description: error.message === "Invalid login credentials" 
-          ? "Invalid email or password. Please try again."
-          : error.message,
+        description: errorMsg,
         variant: "destructive",
       });
     } else {
+      setError(null);
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
       // Navigation will be handled by useEffect based on role
     }
-    
+
     setIsLoading(false);
   };
 
