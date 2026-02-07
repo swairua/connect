@@ -526,21 +526,24 @@ CREATE POLICY "Packages: UPDATE by tenant members" ON packages
   );
 
 -- Service Plans policies
-CREATE POLICY IF NOT EXISTS "Service Plans: SELECT by tenant members" ON service_plans
+DROP POLICY IF EXISTS "Service Plans: SELECT by tenant members" ON service_plans;
+CREATE POLICY "Service Plans: SELECT by tenant members" ON service_plans
   FOR SELECT USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Service Plans: INSERT by tenant members" ON service_plans
+DROP POLICY IF EXISTS "Service Plans: INSERT by tenant members" ON service_plans;
+CREATE POLICY "Service Plans: INSERT by tenant members" ON service_plans
   FOR INSERT WITH CHECK (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Service Plans: UPDATE by tenant members" ON service_plans
+DROP POLICY IF EXISTS "Service Plans: UPDATE by tenant members" ON service_plans;
+CREATE POLICY "Service Plans: UPDATE by tenant members" ON service_plans
   FOR UPDATE USING (
     tenant_id IN (
       SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
