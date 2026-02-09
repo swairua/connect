@@ -316,10 +316,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           // Defer Supabase calls with setTimeout to prevent deadlock
+          // Add delay to allow profile creation trigger to execute (typically < 1 second)
           setTimeout(async () => {
             await fetchUserData(session.user.id);
             setLoading(false);
-          }, 0);
+          }, 500); // 500ms delay for profile trigger execution
         } else {
           setProfile(null);
           setRoles([]);
