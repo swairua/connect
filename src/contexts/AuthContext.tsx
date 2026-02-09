@@ -153,7 +153,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const errorMsg = errors.join('; ');
           // Check if this is a schema error (table doesn't exist)
           if (errorMsg.includes('does not exist') || errorMsg.includes('relation')) {
-            throw new Error('Database schema not initialized. Please run database setup.');
+            // Include the real error message so users/developers can see which table is missing
+            const dbError = new Error(`Database schema incomplete: ${errorMsg}. Please run database setup at /setup`);
+            throw dbError;
           }
           throw new Error(errorMsg);
         }
