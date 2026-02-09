@@ -151,15 +151,31 @@ const AuthPage = () => {
     const { error } = await signIn(loginEmail, loginPassword);
 
     if (error) {
-      const errorMsg = error.message === "Invalid login credentials"
-        ? "Invalid email or password. Please try again."
-        : `${error.message}`;
-      setError(errorMsg);
-      toast({
-        title: "Login Failed",
-        description: errorMsg,
-        variant: "destructive",
-      });
+      // Check if this is a database schema error
+      if (error.message.includes('Database tables not found') ||
+          error.message.includes('relation') ||
+          error.message.includes('does not exist')) {
+        setError(error.message);
+        toast({
+          title: "Database Not Initialized",
+          description: "Please set up your database first.",
+          variant: "destructive",
+        });
+        // Redirect to setup page
+        setTimeout(() => {
+          navigate('/setup');
+        }, 1500);
+      } else {
+        const errorMsg = error.message === "Invalid login credentials"
+          ? "Invalid email or password. Please try again."
+          : `${error.message}`;
+        setError(errorMsg);
+        toast({
+          title: "Login Failed",
+          description: errorMsg,
+          variant: "destructive",
+        });
+      }
     } else {
       setError(null);
       toast({
@@ -252,28 +268,66 @@ const AuthPage = () => {
                   </CardDescription>
 
                   {error && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
-                      <p className="font-semibold">Error:</p>
-                      <p className="mt-1 break-words font-mono text-xs">{error}</p>
+                    <div className={`p-3 rounded text-sm border ${
+                      error.includes('does not exist') || error.includes('Database schema')
+                        ? 'bg-blue-50 border-blue-200 text-blue-900'
+                        : 'bg-red-50 border-red-200 text-red-800'
+                    }`}>
+                      <p className="font-semibold">
+                        {error.includes('does not exist') || error.includes('Database schema')
+                          ? '⚙️ Database Initialization Required'
+                          : '❌ Login Error'}
+                      </p>
+                      <p className="mt-2 break-words font-mono text-xs leading-relaxed">{error}</p>
+                      {(error.includes('Database schema') || error.includes('does not exist') || error.includes('relation')) && (
+                        <div className="mt-3 space-y-2">
+                          <p className="text-xs font-medium">Your database tables need to be initialized.</p>
+                          <Button
+                            type="button"
+                            className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => navigate('/setup')}
+                          >
+                            Initialize Database
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {userDataError && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-                      <p className="font-semibold">Server Error:</p>
-                      <p className="mt-1 break-words font-mono text-xs">{userDataError}</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2 w-full text-xs"
-                        onClick={async () => {
-                          await refreshUserData();
-                        }}
-                        disabled={isLoading}
-                      >
-                        Retry
-                      </Button>
+                    <div className={`p-3 rounded text-sm border ${
+                      userDataError.includes('does not exist') || userDataError.includes('Database schema')
+                        ? 'bg-blue-50 border-blue-200 text-blue-900'
+                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                    }`}>
+                      <p className="font-semibold">
+                        {userDataError.includes('does not exist') || userDataError.includes('Database schema')
+                          ? '⚙️ Database Setup Needed'
+                          : '⚠️ Server Error'}
+                      </p>
+                      <p className="mt-2 break-words font-mono text-xs leading-relaxed">{userDataError}</p>
+                      {(userDataError.includes('Database schema') || userDataError.includes('does not exist') || userDataError.includes('relation')) ? (
+                        <Button
+                          type="button"
+                          className="mt-3 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                          onClick={() => navigate('/setup')}
+                        >
+                          Initialize Database
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 w-full text-xs"
+                          onClick={async () => {
+                            await refreshUserData();
+                          }}
+                          disabled={isLoading}
+                        >
+                          Retry
+                        </Button>
+                      )}
                     </div>
                   )}
 

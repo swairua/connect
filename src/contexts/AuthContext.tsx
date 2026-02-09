@@ -150,7 +150,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // If any query failed, throw error for retry logic
         if (errors.length > 0) {
-          throw new Error(errors.join('; '));
+          const errorMsg = errors.join('; ');
+          // Check if this is a schema error (table doesn't exist)
+          if (errorMsg.includes('does not exist') || errorMsg.includes('relation')) {
+            // Include the real error message so users/developers can see which table is missing
+            const dbError = new Error(`Database schema incomplete: ${errorMsg}. Please run database setup at /setup`);
+            throw dbError;
+          }
+          throw new Error(errorMsg);
         }
 
         // Only set data if queries succeeded
@@ -231,8 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await withRetry(async () => {
         const { error } = await supabase
           .from('profiles')
-          .select('count', { count: 'exact' })
-          .limit(1);
+          .select('*', { count: 'exact', head: true });
 
         if (error) {
           throw error;
@@ -321,6 +327,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: result.error ?? null };
     } catch (error) {
       const loginError = error instanceof Error ? error : new Error(String(error));
+      const errorMsg = loginError.message.toLowerCase();
+
+      // Check if this is a database schema error (tables don't exist)
+      if (errorMsg.includes('relation') || errorMsg.includes('does not exist')) {
+        // Include the actual error so users can see which table is missing
+        const dbError = new Error(
+          `Database schema error: ${loginError.message}. Please initialize the database at /setup`
+        );
+        console.error('Database schema error detected:', loginError.message);
+        return { error: dbError };
+      }
+
       console.error('Login failed after retries:', loginError.message);
       return { error: loginError };
     }
