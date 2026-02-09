@@ -339,6 +339,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        // Add delay to allow profile creation trigger to execute
+        await new Promise(resolve => setTimeout(resolve, 500));
         await fetchUserData(session.user.id);
       }
       setLoading(false);
