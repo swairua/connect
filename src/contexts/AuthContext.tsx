@@ -321,6 +321,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: result.error ?? null };
     } catch (error) {
       const loginError = error instanceof Error ? error : new Error(String(error));
+      const errorMsg = loginError.message.toLowerCase();
+
+      // Check if this is a database schema error (tables don't exist)
+      if (errorMsg.includes('relation') || errorMsg.includes('does not exist')) {
+        const dbError = new Error(
+          'Database tables not found. Please run database initialization at /setup'
+        );
+        console.error('Database schema error detected:', loginError.message);
+        return { error: dbError };
+      }
+
       console.error('Login failed after retries:', loginError.message);
       return { error: loginError };
     }
