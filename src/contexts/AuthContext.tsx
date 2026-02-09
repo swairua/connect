@@ -236,8 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await withRetry(async () => {
         const { error } = await supabase
           .from('profiles')
-          .select('count', { count: 'exact' })
-          .limit(1);
+          .select('*', { count: 'exact', head: true });
 
         if (error) {
           throw error;
