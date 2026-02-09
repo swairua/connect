@@ -271,6 +271,17 @@ const AuthPage = () => {
                     <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
                       <p className="font-semibold">Error:</p>
                       <p className="mt-1 break-words font-mono text-xs">{error}</p>
+                      {(error.includes('Database tables not found') || error.includes('does not exist')) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 w-full text-xs bg-white hover:bg-gray-50"
+                          onClick={() => navigate('/setup')}
+                        >
+                          Set Up Database
+                        </Button>
+                      )}
                     </div>
                   )}
 
