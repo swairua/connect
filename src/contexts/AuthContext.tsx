@@ -331,8 +331,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Check if this is a database schema error (tables don't exist)
       if (errorMsg.includes('relation') || errorMsg.includes('does not exist')) {
+        // Include the actual error so users can see which table is missing
         const dbError = new Error(
-          'Database tables not found. Please run database initialization at /setup'
+          `Database schema error: ${loginError.message}. Please initialize the database at /setup`
         );
         console.error('Database schema error detected:', loginError.message);
         return { error: dbError };
