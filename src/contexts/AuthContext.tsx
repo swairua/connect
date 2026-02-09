@@ -95,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [tenantMemberships, setTenantMemberships] = useState<TenantMembership[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userDataError, setUserDataError] = useState<string | null>(null);
 
   const isSuperAdmin = roles.includes('super_admin');
   
