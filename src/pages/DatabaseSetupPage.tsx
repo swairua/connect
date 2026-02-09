@@ -12,16 +12,24 @@ const DatabaseSetupPage = () => {
   const [copied, setCopied] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [verifiedTables, setVerifiedTables] = useState<string[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const check = async () => {
       setIsChecking(true);
-      const result = await checkDatabaseStatus();
-      setVerifiedTables(result.tables);
-      
-      if (result.initialized) {
-        setStatus("initialized");
-      } else {
+      try {
+        const result = await checkDatabaseStatus();
+        setVerifiedTables(result.tables);
+        setErrors(result.errors);
+
+        if (result.initialized) {
+          setStatus("initialized");
+        } else {
+          setStatus("not-initialized");
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        setErrors([`Error checking database: ${errorMessage}`]);
         setStatus("not-initialized");
       }
       setIsChecking(false);
@@ -30,7 +38,7 @@ const DatabaseSetupPage = () => {
     check();
     // Recheck every 10 seconds
     const interval = setInterval(check, 10000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
