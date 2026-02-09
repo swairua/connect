@@ -273,6 +273,19 @@ const DatabaseSetupPage = () => {
                 </div>
               ) : (
                 <>
+                  {errors.length > 0 && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm font-semibold text-red-900 mb-2">Issues Found:</p>
+                      <ul className="space-y-1">
+                        {errors.map((error, idx) => (
+                          <li key={idx} className="text-xs text-red-800 break-words">
+                            • {error}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <p className="text-sm">
                       Tables verified: <span className="font-semibold text-green-600">{verifiedTables.length}</span>
@@ -287,7 +300,7 @@ const DatabaseSetupPage = () => {
                       </div>
                     )}
                   </div>
-                  <Button 
+                  <Button
                     onClick={retryCheck}
                     variant="outline"
                     className="w-full mt-4"
