@@ -68,6 +68,22 @@ export async function checkDatabaseStatus(): Promise<{
   const verifiedTables: string[] = [];
   const errors: string[] = [];
 
+  // Check if Supabase is properly configured
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    const missingVars = [];
+    if (!supabaseUrl) missingVars.push('VITE_SUPABASE_URL');
+    if (!supabaseKey) missingVars.push('VITE_SUPABASE_PUBLISHABLE_KEY');
+
+    return {
+      initialized: false,
+      tables: [],
+      errors: [`Supabase not configured. Missing environment variables: ${missingVars.join(', ')}`],
+    };
+  }
+
   for (const table of tables) {
     try {
       const { error } = await supabase
@@ -80,7 +96,8 @@ export async function checkDatabaseStatus(): Promise<{
         verifiedTables.push(table);
       }
     } catch (err) {
-      errors.push(`${table}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      errors.push(`${table}: ${errorMessage}`);
     }
   }
 
