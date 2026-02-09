@@ -132,6 +132,16 @@ const DatabaseSetupPage = () => {
           <p className="text-muted-foreground mt-2">
             Your Supabase database needs to be initialized before you can use the app
           </p>
+
+          {errors.length > 0 && errors[0]?.includes("Supabase not configured") && (
+            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg inline-block max-w-md">
+              <p className="text-sm text-orange-800">
+                <span className="font-semibold">⚠️ Supabase Not Connected</span>
+                <br />
+                Make sure your Supabase environment variables are set up in your deployment.
+              </p>
+            </div>
+          )}
         </div>
 
         <Card className="shadow-xl border-yellow-200">
