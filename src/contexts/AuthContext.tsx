@@ -287,6 +287,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTenants([]);
     setTenantMemberships([]);
     setCurrentTenant(null);
+    setUserDataError(null);
   };
 
   return (
@@ -300,6 +301,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentTenant,
         tenantMemberships,
         loading,
+        userDataError,
         isSuperAdmin,
         needsOnboarding,
         signIn,
