@@ -258,6 +258,25 @@ const AuthPage = () => {
                     </div>
                   )}
 
+                  {userDataError && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                      <p className="font-semibold">Server Error:</p>
+                      <p className="mt-1 break-words font-mono text-xs">{userDataError}</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 w-full text-xs"
+                        onClick={async () => {
+                          await refreshUserData();
+                        }}
+                        disabled={isLoading}
+                      >
+                        Retry
+                      </Button>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <Input
