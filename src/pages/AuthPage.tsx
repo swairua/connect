@@ -268,19 +268,28 @@ const AuthPage = () => {
                   </CardDescription>
 
                   {error && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
-                      <p className="font-semibold">Error:</p>
-                      <p className="mt-1 break-words font-mono text-xs">{error}</p>
-                      {(error.includes('Database tables not found') || error.includes('does not exist')) && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 w-full text-xs bg-white hover:bg-gray-50"
-                          onClick={() => navigate('/setup')}
-                        >
-                          Set Up Database
-                        </Button>
+                    <div className={`p-3 rounded text-sm border ${
+                      error.includes('does not exist') || error.includes('Database schema')
+                        ? 'bg-blue-50 border-blue-200 text-blue-900'
+                        : 'bg-red-50 border-red-200 text-red-800'
+                    }`}>
+                      <p className="font-semibold">
+                        {error.includes('does not exist') || error.includes('Database schema')
+                          ? '⚙️ Database Initialization Required'
+                          : '❌ Login Error'}
+                      </p>
+                      <p className="mt-2 break-words font-mono text-xs leading-relaxed">{error}</p>
+                      {(error.includes('Database schema') || error.includes('does not exist') || error.includes('relation')) && (
+                        <div className="mt-3 space-y-2">
+                          <p className="text-xs font-medium">Your database tables need to be initialized.</p>
+                          <Button
+                            type="button"
+                            className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => navigate('/setup')}
+                          >
+                            Initialize Database
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
