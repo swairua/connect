@@ -24,15 +24,16 @@ const signupSchema = z.object({
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const { user, signIn, signUp, loading: authLoading, isSuperAdmin, needsOnboarding } = useAuth();
+  const { user, signIn, signUp, loading: authLoading, isSuperAdmin, needsOnboarding, userDataError, refreshUserData } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isCreatingTestUser, setIsCreatingTestUser] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  // Login form state - pre-filled with test credentials
+  const [loginEmail, setLoginEmail] = useState("gichukisimon@gmail.com");
+  const [loginPassword, setLoginPassword] = useState("Password123");
   
   // Signup form state
   const [signupEmail, setSignupEmail] = useState("");
@@ -52,6 +53,23 @@ const AuthPage = () => {
     }
   }, [user, authLoading, isSuperAdmin, needsOnboarding, navigate]);
 
+  // Show connection status toast on page load
+  useEffect(() => {
+    if (!authLoading) {
+      if (user) {
+        toast({
+          title: "Connected",
+          description: `Logged in as ${user.email}`,
+        });
+      } else {
+        toast({
+          title: "Not Connected",
+          description: "Please log in or create an account to continue",
+        });
+      }
+    }
+  }, []);
+
   const createTestUser = async () => {
     const testEmail = "gichukisimon@gmail.com";
     const testPassword = "Password123";
@@ -59,34 +77,32 @@ const AuthPage = () => {
     try {
       setIsCreatingTestUser(true);
 
-      // First, try to delete the existing user if it exists
-      try {
-        const { data: { user: existingUser } } = await supabase.auth.admin.getUserById("");
-        if (existingUser) {
-          await supabase.auth.admin.deleteUser("");
-        }
-      } catch (error) {
-        // User doesn't exist, which is fine
-        console.log("No existing user to delete");
-      }
-
-      // Create new test user via signUp
+      // Try to check if test user exists by attempting signup
       const { error: signupError } = await signUp(testEmail, testPassword, "Test User");
 
       if (signupError) {
-        // If user already exists, try to just log them in
-        if (signupError.message.includes("already registered")) {
+        // If user already exists, that's fine - we'll use the existing account
+        if (signupError.message && signupError.message.includes("already registered")) {
           toast({
             title: "Test User Exists",
-            description: "Using existing test user credentials. Auto-filling form...",
+            description: "Test user already exists. Auto-filling form with credentials...",
+          });
+        } else if (signupError.message && signupError.message.includes("Database error")) {
+          // Database error (missing tables) - still allow user to try to sign in
+          toast({
+            title: "Note: Database Setup Required",
+            description: "The test user account may not be fully set up yet. Check that all database tables exist.",
+            variant: "destructive",
           });
         } else {
+          // Other signup error
           throw signupError;
         }
       } else {
+        // Signup succeeded - new test user created
         toast({
           title: "Test User Created",
-          description: "Test user created successfully!",
+          description: "New test user created successfully!",
         });
       }
 
@@ -96,15 +112,15 @@ const AuthPage = () => {
 
       toast({
         title: "Form Auto-Filled",
-        description: "Login form has been filled with test credentials. Click Sign In to continue.",
+        description: `Form filled with test credentials: ${testEmail}. Click Sign In to continue.`,
       });
     } catch (error: any) {
       toast({
-        title: "Error Creating Test User",
-        description: error.message || "Failed to create test user",
+        title: "Error with Test User",
+        description: error.message || "Unable to prepare test user. You can try to sign in manually.",
         variant: "destructive",
       });
-      console.error("Error creating test user:", error);
+      console.error("Error with test user:", error);
     } finally {
       setIsCreatingTestUser(false);
     }
@@ -112,41 +128,47 @@ const AuthPage = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setError(null);
+
     const validation = loginSchema.safeParse({
       email: loginEmail,
       password: loginPassword,
     });
 
     if (!validation.success) {
+      const errorMsg = validation.error.errors[0].message;
+      setError(errorMsg);
       toast({
         title: "Validation Error",
-        description: validation.error.errors[0].message,
+        description: errorMsg,
         variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
-    
+
     const { error } = await signIn(loginEmail, loginPassword);
-    
+
     if (error) {
+      const errorMsg = error.message === "Invalid login credentials"
+        ? "Invalid email or password. Please try again."
+        : `${error.message}`;
+      setError(errorMsg);
       toast({
         title: "Login Failed",
-        description: error.message === "Invalid login credentials" 
-          ? "Invalid email or password. Please try again."
-          : error.message,
+        description: errorMsg,
         variant: "destructive",
       });
     } else {
+      setError(null);
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
       // Navigation will be handled by useEffect based on role
     }
-    
+
     setIsLoading(false);
   };
 
@@ -228,7 +250,33 @@ const AuthPage = () => {
                   <CardDescription className="text-center">
                     Enter your credentials to access your dashboard
                   </CardDescription>
-                  
+
+                  {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                      <p className="font-semibold">Error:</p>
+                      <p className="mt-1 break-words font-mono text-xs">{error}</p>
+                    </div>
+                  )}
+
+                  {userDataError && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                      <p className="font-semibold">Server Error:</p>
+                      <p className="mt-1 break-words font-mono text-xs">{userDataError}</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 w-full text-xs"
+                        onClick={async () => {
+                          await refreshUserData();
+                        }}
+                        disabled={isLoading}
+                      >
+                        Retry
+                      </Button>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <Input

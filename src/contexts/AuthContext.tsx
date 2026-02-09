@@ -1,8 +1,34 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 type AppRole = 'super_admin' | 'admin' | 'manager' | 'operator' | 'viewer';
+
+// Retry utility with exponential backoff
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 2,
+  baseDelayMs = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt < maxRetries) {
+        const delayMs = baseDelayMs * Math.pow(2, attempt);
+        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delayMs}ms`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  throw lastError;
+}
 
 interface UserProfile {
   id: string;
@@ -39,6 +65,7 @@ interface AuthContextType {
   currentTenant: Tenant | null;
   tenantMemberships: TenantMembership[];
   loading: boolean;
+  userDataError: string | null;
   isSuperAdmin: boolean;
   needsOnboarding: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -68,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [tenantMemberships, setTenantMemberships] = useState<TenantMembership[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userDataError, setUserDataError] = useState<string | null>(null);
 
   const isSuperAdmin = roles.includes('super_admin');
   
@@ -100,43 +128,100 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Fetch all data in parallel
-      const [profileResult, rolesResult, tenantMembersResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).single(),
-        supabase.from('user_roles').select('role').eq('user_id', userId),
-        supabase.from('tenant_members').select('tenant_id, role, tenants(*)').eq('user_id', userId),
-      ]);
+      // Fetch all data in parallel with retry logic
+      await withRetry(async () => {
+        const [profileResult, rolesResult, tenantMembersResult] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', userId).single(),
+          supabase.from('user_roles').select('role').eq('user_id', userId),
+          supabase.from('tenant_members').select('tenant_id, role').eq('user_id', userId),
+        ]);
 
-      if (profileResult.data) {
-        setProfile(profileResult.data as UserProfile);
-      }
-
-      if (rolesResult.data) {
-        setRoles(rolesResult.data.map((r: UserRole) => r.role));
-      }
-
-      if (tenantMembersResult.data && tenantMembersResult.data.length > 0) {
-        const userTenants = tenantMembersResult.data
-          .map((tm: any) => tm.tenants)
-          .filter(Boolean) as Tenant[];
-        setTenants(userTenants);
-        
-        const memberships = tenantMembersResult.data.map((tm: any) => ({
-          tenant_id: tm.tenant_id,
-          role: tm.role as AppRole,
-        }));
-        setTenantMemberships(memberships);
-        
-        if (!currentTenant && userTenants.length > 0) {
-          setCurrentTenant(userTenants[0]);
+        // Check for errors on each result
+        const errors = [];
+        if (profileResult.error) {
+          errors.push(`Profile: ${profileResult.error.message}`);
         }
-      } else {
-        // Explicitly set empty arrays when no tenant data
-        setTenants([]);
-        setTenantMemberships([]);
-      }
+        if (rolesResult.error) {
+          errors.push(`Roles: ${rolesResult.error.message}`);
+        }
+        if (tenantMembersResult.error) {
+          errors.push(`Tenants: ${tenantMembersResult.error.message}`);
+        }
+
+        // If any query failed, throw error for retry logic
+        if (errors.length > 0) {
+          throw new Error(errors.join('; '));
+        }
+
+        // Only set data if queries succeeded
+        if (profileResult.data) {
+          setProfile(profileResult.data as UserProfile);
+        }
+
+        if (rolesResult.data) {
+          setRoles(rolesResult.data.map((r: UserRole) => r.role));
+        }
+
+        if (tenantMembersResult.data && tenantMembersResult.data.length > 0) {
+          // Get unique tenant IDs
+          const tenantIds = Array.from(new Set((tenantMembersResult.data as any[]).map(tm => tm.tenant_id)));
+
+          // Fetch tenant details for all tenant IDs
+          const { data: tenantsData, error: tenantsError } = await supabase
+            .from('tenants')
+            .select('*')
+            .in('id', tenantIds);
+
+          if (tenantsError) {
+            throw new Error(`Failed to fetch tenants: ${tenantsError.message}`);
+          }
+
+          setTenants((tenantsData || []) as Tenant[]);
+
+          const memberships = (tenantMembersResult.data as any[]).map((tm: any) => ({
+            tenant_id: tm.tenant_id,
+            role: tm.role as AppRole,
+          }));
+          setTenantMemberships(memberships);
+
+          if (!currentTenant && tenantsData && tenantsData.length > 0) {
+            setCurrentTenant(tenantsData[0] as Tenant);
+          }
+        } else {
+          // Explicitly set empty arrays when no tenant data
+          setTenants([]);
+          setTenantMemberships([]);
+        }
+
+        // Clear error state on success
+        setUserDataError(null);
+      });
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Error fetching user data:', errorMessage);
+
+      // Set error state
+      setUserDataError(errorMessage);
+
+      // Determine if current user is admin to show detailed error
+      const isAdmin = roles.includes('super_admin') || roles.includes('admin');
+
+      // Show appropriate toast based on user role
+      if (isAdmin) {
+        // Show detailed error for admins
+        toast({
+          title: "Server Error Loading Account Data",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        // Show generic error for regular users
+        toast({
+          title: "Server Error",
+          description: "Unable to load your account data. Please try again or contact support.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -159,6 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTenants([]);
           setTenantMemberships([]);
           setCurrentTenant(null);
+          setUserDataError(null);
           setLoading(false);
         }
       }
@@ -211,6 +297,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTenants([]);
     setTenantMemberships([]);
     setCurrentTenant(null);
+    setUserDataError(null);
   };
 
   return (
@@ -224,6 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentTenant,
         tenantMemberships,
         loading,
+        userDataError,
         isSuperAdmin,
         needsOnboarding,
         signIn,
