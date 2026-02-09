@@ -59,6 +59,18 @@ import { useState, useMemo } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { usePackages } from "@/hooks/usePackages";
 import { useTickets } from "@/hooks/useTickets";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Helper function to get user initials
+const getInitials = (name?: string | null): string => {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
 
 const Index = () => {
   const navigate = useNavigate();
