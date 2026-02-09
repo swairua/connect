@@ -128,43 +128,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Fetch all data in parallel
-      const [profileResult, rolesResult, tenantMembersResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).single(),
-        supabase.from('user_roles').select('role').eq('user_id', userId),
-        supabase.from('tenant_members').select('tenant_id, role, tenants(*)').eq('user_id', userId),
-      ]);
+      // Fetch all data in parallel with retry logic
+      await withRetry(async () => {
+        const [profileResult, rolesResult, tenantMembersResult] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', userId).single(),
+          supabase.from('user_roles').select('role').eq('user_id', userId),
+          supabase.from('tenant_members').select('tenant_id, role, tenants(*)').eq('user_id', userId),
+        ]);
 
-      if (profileResult.data) {
-        setProfile(profileResult.data as UserProfile);
-      }
-
-      if (rolesResult.data) {
-        setRoles(rolesResult.data.map((r: UserRole) => r.role));
-      }
-
-      if (tenantMembersResult.data && tenantMembersResult.data.length > 0) {
-        const userTenants = tenantMembersResult.data
-          .map((tm: any) => tm.tenants)
-          .filter(Boolean) as Tenant[];
-        setTenants(userTenants);
-        
-        const memberships = tenantMembersResult.data.map((tm: any) => ({
-          tenant_id: tm.tenant_id,
-          role: tm.role as AppRole,
-        }));
-        setTenantMemberships(memberships);
-        
-        if (!currentTenant && userTenants.length > 0) {
-          setCurrentTenant(userTenants[0]);
+        // Check for errors on each result
+        const errors = [];
+        if (profileResult.error) {
+          errors.push(`Profile: ${profileResult.error.message}`);
         }
-      } else {
-        // Explicitly set empty arrays when no tenant data
-        setTenants([]);
-        setTenantMemberships([]);
-      }
+        if (rolesResult.error) {
+          errors.push(`Roles: ${rolesResult.error.message}`);
+        }
+        if (tenantMembersResult.error) {
+          errors.push(`Tenants: ${tenantMembersResult.error.message}`);
+        }
+
+        // If any query failed, throw error for retry logic
+        if (errors.length > 0) {
+          throw new Error(errors.join('; '));
+        }
+
+        // Only set data if queries succeeded
+        if (profileResult.data) {
+          setProfile(profileResult.data as UserProfile);
+        }
+
+        if (rolesResult.data) {
+          setRoles(rolesResult.data.map((r: UserRole) => r.role));
+        }
+
+        if (tenantMembersResult.data && tenantMembersResult.data.length > 0) {
+          const userTenants = tenantMembersResult.data
+            .map((tm: any) => tm.tenants)
+            .filter(Boolean) as Tenant[];
+          setTenants(userTenants);
+
+          const memberships = tenantMembersResult.data.map((tm: any) => ({
+            tenant_id: tm.tenant_id,
+            role: tm.role as AppRole,
+          }));
+          setTenantMemberships(memberships);
+
+          if (!currentTenant && userTenants.length > 0) {
+            setCurrentTenant(userTenants[0]);
+          }
+        } else {
+          // Explicitly set empty arrays when no tenant data
+          setTenants([]);
+          setTenantMemberships([]);
+        }
+
+        // Clear error state on success
+        setUserDataError(null);
+      });
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Error fetching user data:', errorMessage);
+
+      // Set error state
+      setUserDataError(errorMessage);
+
+      // Determine if current user is admin to show detailed error
+      const isAdmin = roles.includes('super_admin') || roles.includes('admin');
+
+      // Show appropriate toast based on user role
+      if (isAdmin) {
+        // Show detailed error for admins
+        toast({
+          title: "Server Error Loading Account Data",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        // Show generic error for regular users
+        toast({
+          title: "Server Error",
+          description: "Unable to load your account data. Please try again or contact support.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
