@@ -330,15 +330,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const redirectUrl = `${window.location.origin}/`;
 
-      // Verify database connection before attempting signup
-      const isHealthy = await healthCheck();
-      if (!isHealthy) {
-        console.warn('Database connection unhealthy, attempting signup anyway with retries');
-      }
+      console.log(`Attempting signup for ${email} with retry logic...`);
 
-      // Use retry logic for signup to handle transient database errors
+      // Use aggressive retry logic for signup (up to 6 attempts with exponential backoff)
       const result = await withRetry(async () => {
-        return await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -348,18 +344,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             },
           },
         });
-      });
+
+        // Throw if there's an error so retry logic kicks in
+        if (error) {
+          throw error;
+        }
+
+        return { data, error: null };
+      }, 5, 500); // 5 retries, starting with 500ms delay
 
       const error = result.error;
 
       // If signup succeeded, auto-login the user
       if (!error) {
+        console.log(`Signup successful for ${email}, attempting auto-login...`);
         await signIn(email, password);
       }
 
       return { error };
     } catch (error) {
       const signupError = error instanceof Error ? error : new Error(String(error));
+      console.error('Signup failed after retries:', signupError.message);
       return { error: signupError };
     }
   };
