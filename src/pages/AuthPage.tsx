@@ -31,9 +31,9 @@ const AuthPage = () => {
   const [isCreatingTestUser, setIsCreatingTestUser] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Login form state - pre-filled with test credentials
-  const [loginEmail, setLoginEmail] = useState("gichukisimon@gmail.com");
-  const [loginPassword, setLoginPassword] = useState("Password123");
+  // Login form state - empty on initial load
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   
   // Signup form state
   const [signupEmail, setSignupEmail] = useState("");

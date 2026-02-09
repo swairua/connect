@@ -8,8 +8,8 @@ type AppRole = 'super_admin' | 'admin' | 'manager' | 'operator' | 'viewer';
 // Retry utility with exponential backoff
 async function withRetry<T>(
   fn: () => Promise<T>,
-  maxRetries = 2,
-  baseDelayMs = 1000
+  maxRetries = 5,
+  baseDelayMs = 500
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -21,7 +21,7 @@ async function withRetry<T>(
 
       if (attempt < maxRetries) {
         const delayMs = baseDelayMs * Math.pow(2, attempt);
-        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delayMs}ms`);
+        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delayMs}ms - Error: ${lastError.message}`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
@@ -225,13 +225,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Health check to ensure database connection is established (non-blocking)
+  const healthCheck = async (): Promise<boolean> => {
+    try {
+      await withRetry(async () => {
+        const { error } = await supabase
+          .from('profiles')
+          .select('count', { count: 'exact' })
+          .limit(1);
+
+        if (error) {
+          throw error;
+        }
+      });
+
+      // Toast success message only if successful
+      toast({
+        title: "Database Connected",
+        description: "Successfully connected to the database. You can now login.",
+        variant: "default",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Database health check failed:', error);
+      // Don't show destructive toast - login will retry automatically
+      // This prevents alarming users if there's a temporary connection issue
+      console.log('Health check will retry during login attempt');
+      return false;
+    }
+  };
+
   useEffect(() => {
+    // Perform health check on app initialization to ensure database connection
+    healthCheck();
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           // Defer Supabase calls with setTimeout to prevent deadlock
           setTimeout(async () => {
@@ -254,7 +288,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         await fetchUserData(session.user.id);
       }
@@ -265,27 +299,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      // Attempt login with aggressive retry logic (up to 6 attempts with exponential backoff)
+      // This is crucial for handling transient database connection issues
+      console.log(`Attempting login for ${email} with retry logic...`);
+
+      const result = await withRetry(async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        // Throw if there's an error so retry logic kicks in
+        if (error) {
+          throw error;
+        }
+
+        return { data, error: null };
+      }, 5, 500); // 5 retries, starting with 500ms delay
+
+      return { error: result.error ?? null };
+    } catch (error) {
+      const loginError = error instanceof Error ? error : new Error(String(error));
+      console.error('Login failed after retries:', loginError.message);
+      return { error: loginError };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-    return { error };
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+
+      console.log(`Attempting signup for ${email} with retry logic...`);
+
+      // Use aggressive retry logic for signup (up to 6 attempts with exponential backoff)
+      const result = await withRetry(async () => {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+
+        // Throw if there's an error so retry logic kicks in
+        if (error) {
+          throw error;
+        }
+
+        return { data, error: null };
+      }, 5, 500); // 5 retries, starting with 500ms delay
+
+      const error = result.error;
+
+      // If signup succeeded, auto-login the user
+      if (!error) {
+        console.log(`Signup successful for ${email}, attempting auto-login...`);
+        await signIn(email, password);
+      }
+
+      return { error };
+    } catch (error) {
+      const signupError = error instanceof Error ? error : new Error(String(error));
+      console.error('Signup failed after retries:', signupError.message);
+      return { error: signupError };
+    }
   };
 
   const signOut = async () => {
