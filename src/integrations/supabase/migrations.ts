@@ -358,4 +358,127 @@ CREATE INDEX IF NOT EXISTS idx_usage_analytics_subscriber ON usage_analytics(sub
 -- Network table indexes
 CREATE INDEX IF NOT EXISTS idx_network_config_tenant ON network_configurations(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_smartolt_config_tenant ON smartolt_configurations(tenant_id);
+
+-- ============================================
+-- Auto-Profile Creation Trigger
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, is_active)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+    true
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET
+    email = EXCLUDED.email,
+    full_name = COALESCE(EXCLUDED.full_name, profiles.full_name);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================
+-- Row Level Security Policies
+-- ============================================
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tenant_members ENABLE ROW LEVEL SECURITY;
+
+-- Profiles policies
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
+CREATE POLICY "Users can read own profile"
+  ON public.profiles
+  FOR SELECT
+  USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+CREATE POLICY "Users can update own profile"
+  ON public.profiles
+  FOR UPDATE
+  USING (auth.uid() = id);
+
+-- User Roles policies
+DROP POLICY IF EXISTS "Users can read own roles" ON public.user_roles;
+CREATE POLICY "Users can read own roles"
+  ON public.user_roles
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Tenant Members policies
+DROP POLICY IF EXISTS "Users can read own memberships" ON public.tenant_members;
+CREATE POLICY "Users can read own memberships"
+  ON public.tenant_members
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- ============================================
+-- Super Admin Bootstrap Function
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.bootstrap_super_admin(
+  admin_email TEXT,
+  admin_full_name TEXT
+)
+RETURNS TABLE(success BOOLEAN, message TEXT, user_id UUID) AS $$
+DECLARE
+  v_user_id UUID;
+  v_count INT;
+BEGIN
+  -- Check if any super admin already exists
+  SELECT COUNT(*) INTO v_count FROM public.user_roles WHERE role = 'super_admin';
+
+  IF v_count > 0 THEN
+    RETURN QUERY SELECT false, 'Super admin already exists in system'::TEXT, NULL::UUID;
+    RETURN;
+  END IF;
+
+  -- Check if user profile exists
+  SELECT id INTO v_user_id FROM public.profiles WHERE email = admin_email;
+
+  IF v_user_id IS NULL THEN
+    RETURN QUERY SELECT false, 'User profile not found for email: ' || admin_email, NULL::UUID;
+    RETURN;
+  END IF;
+
+  -- Create or update user_roles entry
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (v_user_id, 'super_admin')
+  ON CONFLICT (user_id, role) DO NOTHING;
+
+  RETURN QUERY SELECT true, 'Super admin created successfully'::TEXT, v_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- Check Super Admin Existence Function
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.has_super_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS(SELECT 1 FROM public.user_roles WHERE role = 'super_admin' LIMIT 1);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- Check Profile Exists Function
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.profile_exists(user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS(SELECT 1 FROM public.profiles WHERE id = user_id LIMIT 1);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 `;
