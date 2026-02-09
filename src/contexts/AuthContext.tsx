@@ -133,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const [profileResult, rolesResult, tenantMembersResult] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', userId).single(),
           supabase.from('user_roles').select('role').eq('user_id', userId),
-          supabase.from('tenant_members').select('tenant_id, role, tenants(*)').eq('user_id', userId),
+          supabase.from('tenant_members').select('tenant_id, role').eq('user_id', userId),
         ]);
 
         // Check for errors on each result
@@ -163,19 +163,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (tenantMembersResult.data && tenantMembersResult.data.length > 0) {
-          const userTenants = tenantMembersResult.data
-            .map((tm: any) => tm.tenants)
-            .filter(Boolean) as Tenant[];
-          setTenants(userTenants);
+          // Get unique tenant IDs
+          const tenantIds = Array.from(new Set((tenantMembersResult.data as any[]).map(tm => tm.tenant_id)));
 
-          const memberships = tenantMembersResult.data.map((tm: any) => ({
+          // Fetch tenant details for all tenant IDs
+          const { data: tenantsData, error: tenantsError } = await supabase
+            .from('tenants')
+            .select('*')
+            .in('id', tenantIds);
+
+          if (tenantsError) {
+            throw new Error(`Failed to fetch tenants: ${tenantsError.message}`);
+          }
+
+          setTenants((tenantsData || []) as Tenant[]);
+
+          const memberships = (tenantMembersResult.data as any[]).map((tm: any) => ({
             tenant_id: tm.tenant_id,
             role: tm.role as AppRole,
           }));
           setTenantMemberships(memberships);
 
-          if (!currentTenant && userTenants.length > 0) {
-            setCurrentTenant(userTenants[0]);
+          if (!currentTenant && tenantsData && tenantsData.length > 0) {
+            setCurrentTenant(tenantsData[0] as Tenant);
           }
         } else {
           // Explicitly set empty arrays when no tenant data
