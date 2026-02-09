@@ -24,7 +24,7 @@ const signupSchema = z.object({
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const { user, signIn, signUp, loading: authLoading, isSuperAdmin, needsOnboarding } = useAuth();
+  const { user, signIn, signUp, loading: authLoading, isSuperAdmin, needsOnboarding, userDataError, refreshUserData } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
