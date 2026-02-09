@@ -265,11 +265,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Block superadmin email from logging in via regular login
-    if (email.toLowerCase() === 'gichukisimon@gmail.com') {
-      return { error: new Error('This account is managed by the Super Admin. Please contact support.') };
-    }
-
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
