@@ -300,23 +300,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Verify database connection before attempting login
-      const isHealthy = await healthCheck();
-      if (!isHealthy) {
-        console.warn('Database connection unhealthy, attempting login anyway with retries');
-      }
+      // Attempt login with aggressive retry logic (up to 6 attempts with exponential backoff)
+      // This is crucial for handling transient database connection issues
+      console.log(`Attempting login for ${email} with retry logic...`);
 
-      // Use retry logic for login to handle transient database errors
       const result = await withRetry(async () => {
-        return await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-      });
+
+        // Throw if there's an error so retry logic kicks in
+        if (error) {
+          throw error;
+        }
+
+        return { data, error: null };
+      }, 5, 500); // 5 retries, starting with 500ms delay
 
       return { error: result.error ?? null };
     } catch (error) {
       const loginError = error instanceof Error ? error : new Error(String(error));
+      console.error('Login failed after retries:', loginError.message);
       return { error: loginError };
     }
   };
