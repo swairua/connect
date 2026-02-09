@@ -71,27 +71,28 @@ const AuthPage = () => {
   }, []);
 
   const createTestUser = async () => {
-    const testEmail = "gichukisimon@gmail.com";
-    const testPassword = "Password123";
+    const testEmail = "admin@example.com";
+    const testPassword = "SuperAdmin123!";
+    const testFullName = "System Administrator";
 
     try {
       setIsCreatingTestUser(true);
 
       // Try to check if test user exists by attempting signup
-      const { error: signupError } = await signUp(testEmail, testPassword, "Test User");
+      const { error: signupError } = await signUp(testEmail, testPassword, testFullName);
 
       if (signupError) {
         // If user already exists, that's fine - we'll use the existing account
         if (signupError.message && signupError.message.includes("already registered")) {
           toast({
-            title: "Test User Exists",
-            description: "Test user already exists. Auto-filling form with credentials...",
+            title: "Admin User Exists",
+            description: "System administrator already exists. Auto-filling form with credentials...",
           });
         } else if (signupError.message && signupError.message.includes("Database error")) {
           // Database error (missing tables) - still allow user to try to sign in
           toast({
             title: "Note: Database Setup Required",
-            description: "The test user account may not be fully set up yet. Check that all database tables exist.",
+            description: "The database needs to be initialized. Check the setup page.",
             variant: "destructive",
           });
         } else {
@@ -99,10 +100,10 @@ const AuthPage = () => {
           throw signupError;
         }
       } else {
-        // Signup succeeded - new test user created
+        // Signup succeeded - new admin user created
         toast({
-          title: "Test User Created",
-          description: "New test user created successfully!",
+          title: "System Admin Created",
+          description: "System administrator created successfully! You will be assigned admin privileges.",
         });
       }
 
@@ -112,15 +113,15 @@ const AuthPage = () => {
 
       toast({
         title: "Form Auto-Filled",
-        description: `Form filled with test credentials: ${testEmail}. Click Sign In to continue.`,
+        description: `Form filled with system admin credentials: ${testEmail}. Click Sign In to continue.`,
       });
     } catch (error: any) {
       toast({
-        title: "Error with Test User",
-        description: error.message || "Unable to prepare test user. You can try to sign in manually.",
+        title: "Error with Admin User",
+        description: error.message || "Unable to prepare admin user. You can try to sign in manually.",
         variant: "destructive",
       });
-      console.error("Error with test user:", error);
+      console.error("Error with admin user:", error);
     } finally {
       setIsCreatingTestUser(false);
     }
