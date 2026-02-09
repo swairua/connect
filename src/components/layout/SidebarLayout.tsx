@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
 
 const navItems = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -70,8 +71,26 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
   const { profile, roles, isSuperAdmin, currentTenant, tenants, setCurrentTenant, signOut, hasTenantRole } = useAuth();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
+    try {
+      console.log("[Logout] Signing out user...");
+      await signOut();
+      console.log("[Logout] User signed out successfully, redirecting to /auth");
+
+      toast({
+        title: "Signed Out",
+        description: "You have been logged out successfully.",
+        variant: "default",
+      });
+
+      navigate("/auth");
+    } catch (error) {
+      console.error("[Logout] Error during sign out:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while signing out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getInitials = (name: string | null | undefined) => {

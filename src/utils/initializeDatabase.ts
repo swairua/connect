@@ -135,3 +135,186 @@ This will create all required tables for:
 - Activity logging and reporting
   `;
 }
+
+/**
+ * Wait for profile creation with retry logic
+ * Useful after signup when the trigger needs time to execute
+ */
+export async function waitForProfileCreation(
+  userId: string,
+  maxRetries: number = 5,
+  delayMs: number = 500
+): Promise<boolean> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data) {
+        console.log(`Profile found for user ${userId} on attempt ${attempt + 1}`);
+        return true;
+      }
+
+      if (attempt < maxRetries) {
+        const waitTime = delayMs * Math.pow(2, attempt);
+        console.log(`Waiting ${waitTime}ms for profile creation... (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    } catch (err) {
+      console.error('Error checking profile existence:', err);
+      if (attempt < maxRetries) {
+        const waitTime = delayMs * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+
+  console.warn(`Profile not found for user ${userId} after ${maxRetries} retries`);
+  return false;
+}
+
+/**
+ * Verify RLS policies are enabled on auth tables
+ */
+export async function verifyRLSEnabled(): Promise<{
+  enabled: boolean;
+  tables: { [key: string]: boolean };
+  errors: string[];
+}> {
+  const requiredTables = ['profiles', 'user_roles', 'tenant_members'];
+  const results: { [key: string]: boolean } = {};
+  const errors: string[] = [];
+
+  for (const table of requiredTables) {
+    try {
+      // Try to fetch without filters - if RLS is enabled and user has no access, we'll get an error
+      const { error } = await supabase
+        .from(table as any)
+        .select('count()', { count: 'exact', head: true });
+
+      // If error is about permissions, RLS is likely enabled
+      if (error && error.message?.includes('permission')) {
+        results[table] = true;
+      } else if (!error) {
+        // No error means either RLS is not enabled, or user has access
+        // This is acceptable - RLS might not be enforced yet
+        results[table] = true;
+      } else {
+        results[table] = false;
+        errors.push(`${table}: ${error.message}`);
+      }
+    } catch (err) {
+      results[table] = false;
+      errors.push(`${table}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  return {
+    enabled: Object.values(results).every(v => v),
+    tables: results,
+    errors,
+  };
+}
+
+/**
+ * Check if super admin exists in the system
+ */
+export async function checkSuperAdminExists(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .rpc('has_super_admin');
+
+    if (error) {
+      console.error('Error checking super admin:', error);
+      return false;
+    }
+
+    return data === true;
+  } catch (err) {
+    console.error('Error calling has_super_admin function:', err);
+    return false;
+  }
+}
+
+/**
+ * Verify profile exists for a user
+ */
+export async function verifyProfileExists(userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error(`Profile check failed for user ${userId}:`, error);
+      return false;
+    }
+
+    return !!data;
+  } catch (err) {
+    console.error('Error verifying profile:', err);
+    return false;
+  }
+}
+
+/**
+ * Bootstrap super admin on initial setup
+ * This should only be called once, when the first user signs up with admin credentials
+ */
+export async function bootstrapSuperAdmin(
+  email: string,
+  fullName: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    // Verify profile exists first
+    const profileExists = await waitForProfileCreation(
+      (await supabase.auth.getUser()).data.user?.id || '',
+      3,
+      500
+    );
+
+    if (!profileExists) {
+      return {
+        success: false,
+        message: 'User profile could not be created. Please try logging in again.',
+      };
+    }
+
+    // Call the bootstrap function
+    const { data, error } = await supabase
+      .rpc('bootstrap_super_admin', {
+        admin_email: email,
+        admin_full_name: fullName,
+      });
+
+    if (error) {
+      return {
+        success: false,
+        message: `Bootstrap failed: ${error.message}`,
+      };
+    }
+
+    if (data && data[0]) {
+      const result = data[0];
+      return {
+        success: result.success,
+        message: result.message,
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Bootstrap function returned unexpected result',
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: `Error: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}

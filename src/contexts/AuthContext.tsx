@@ -138,25 +138,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Check for errors on each result
         const errors = [];
+        let hasRLSError = false;
+        let hasMissingProfileError = false;
+
         if (profileResult.error) {
-          errors.push(`Profile: ${profileResult.error.message}`);
+          const errorMsg = profileResult.error.message.toLowerCase();
+          // Check for RLS policy violations
+          if (errorMsg.includes('row-level security policy') || errorMsg.includes('permission denied')) {
+            hasRLSError = true;
+            errors.push(`Profile access denied (RLS): Profile data restricted by security policy`);
+          }
+          // Check for missing profile (no row found)
+          else if (errorMsg.includes('no rows found') || profileResult.error.code === 'PGRST116') {
+            hasMissingProfileError = true;
+            errors.push(`Profile: User profile not yet created (trigger may still be executing)`);
+          } else {
+            errors.push(`Profile: ${profileResult.error.message}`);
+          }
         }
+
         if (rolesResult.error) {
-          errors.push(`Roles: ${rolesResult.error.message}`);
+          const errorMsg = rolesResult.error.message.toLowerCase();
+          if (errorMsg.includes('row-level security policy') || errorMsg.includes('permission denied')) {
+            hasRLSError = true;
+            errors.push(`Roles access denied (RLS): Role data restricted by security policy`);
+          } else {
+            errors.push(`Roles: ${rolesResult.error.message}`);
+          }
         }
+
         if (tenantMembersResult.error) {
-          errors.push(`Tenants: ${tenantMembersResult.error.message}`);
+          const errorMsg = tenantMembersResult.error.message.toLowerCase();
+          if (errorMsg.includes('row-level security policy') || errorMsg.includes('permission denied')) {
+            hasRLSError = true;
+            errors.push(`Tenants access denied (RLS): Tenant data restricted by security policy`);
+          } else {
+            errors.push(`Tenants: ${tenantMembersResult.error.message}`);
+          }
         }
 
         // If any query failed, throw error for retry logic
         if (errors.length > 0) {
           const errorMsg = errors.join('; ');
+
           // Check if this is a schema error (table doesn't exist)
           if (errorMsg.includes('does not exist') || errorMsg.includes('relation')) {
-            // Include the real error message so users/developers can see which table is missing
             const dbError = new Error(`Database schema incomplete: ${errorMsg}. Please run database setup at /setup`);
             throw dbError;
           }
+
+          // Check if missing profile (common on first login after signup)
+          if (hasMissingProfileError) {
+            const dbError = new Error(`User profile not yet created. The profile creation trigger may still be executing. Please retry.`);
+            throw dbError;
+          }
+
+          // Check if RLS error
+          if (hasRLSError) {
+            const dbError = new Error(`Access denied by security policies. RLS policies may not be properly configured.`);
+            throw dbError;
+          }
+
           throw new Error(errorMsg);
         }
 
@@ -274,11 +316,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           // Defer Supabase calls with setTimeout to prevent deadlock
+          // Add delay to allow profile creation trigger to execute (typically < 1 second)
+          // Increased to 1000ms to ensure profile is available on both new signups and login attempts
+          console.log(`[Auth] Auth state changed for user ${session.user.id}, fetching data after 1000ms delay`);
           setTimeout(async () => {
             await fetchUserData(session.user.id);
             setLoading(false);
-          }, 0);
+          }, 1000); // 1000ms delay for profile trigger execution and consistency
         } else {
+          console.log(`[Auth] User logged out`);
           setProfile(null);
           setRoles([]);
           setTenants([]);
@@ -296,6 +342,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        // Add delay to allow profile creation trigger to execute
+        // This is critical for direct login to work properly with existing users
+        console.log(`[Auth] Existing session found for user ${session.user.id}, waiting 1000ms for profile`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
         await fetchUserData(session.user.id);
       }
       setLoading(false);

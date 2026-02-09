@@ -11,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Users,
   UserCheck,
@@ -30,6 +32,10 @@ import {
   Timer,
   ChevronDown,
   Loader2,
+  User,
+  Mail,
+  Calendar,
+  Shield,
 } from "lucide-react";
 import {
   AreaChart,
@@ -53,10 +59,25 @@ import { useState, useMemo } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { usePackages } from "@/hooks/usePackages";
 import { useTickets } from "@/hooks/useTickets";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Helper function to get user initials
+const getInitials = (name?: string | null): string => {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
 
 const Index = () => {
   const navigate = useNavigate();
   const [showAdminSection, setShowAdminSection] = useState(false);
+
+  // Get user profile and auth data
+  const { user, profile, roles } = useAuth();
 
   // Fetch data from database
   const { stats: dashboardStats, loading: statsLoading } = useDashboardStats();
@@ -96,6 +117,62 @@ const Index = () => {
         title="Dashboard"
         description="Welcome back! Here's an overview of your ISP business."
       />
+
+      {/* User Profile Card */}
+      <Card className="mb-6 border-border shadow-card bg-gradient-to-br from-primary/5 to-accent/5">
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-16 w-16 border-2 border-primary/20">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/20 text-primary text-lg font-semibold">
+                  {getInitials(profile?.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-bold text-foreground">
+                    {profile?.full_name || profile?.email || "User"}
+                  </h2>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    <span>{profile?.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <User className="h-4 w-4" />
+                    <span>{profile?.phone || "No phone"}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  {roles && roles.length > 0 ? (
+                    roles.map((role) => (
+                      <Badge key={role} variant="default" className="capitalize">
+                        <Shield className="h-3 w-3 mr-1" />
+                        {role.replace(/_/g, " ")}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge variant="secondary">User</Badge>
+                  )}
+                  <Badge variant="outline" className="text-xs">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Active
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/settings")}
+              className="self-start"
+            >
+              Edit Profile
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Revenue Analytics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">

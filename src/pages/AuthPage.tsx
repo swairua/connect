@@ -71,27 +71,28 @@ const AuthPage = () => {
   }, []);
 
   const createTestUser = async () => {
-    const testEmail = "gichukisimon@gmail.com";
-    const testPassword = "Password123";
+    const testEmail = "admin@example.com";
+    const testPassword = "SuperAdmin123!";
+    const testFullName = "System Administrator";
 
     try {
       setIsCreatingTestUser(true);
 
       // Try to check if test user exists by attempting signup
-      const { error: signupError } = await signUp(testEmail, testPassword, "Test User");
+      const { error: signupError } = await signUp(testEmail, testPassword, testFullName);
 
       if (signupError) {
         // If user already exists, that's fine - we'll use the existing account
         if (signupError.message && signupError.message.includes("already registered")) {
           toast({
-            title: "Test User Exists",
-            description: "Test user already exists. Auto-filling form with credentials...",
+            title: "Admin User Exists",
+            description: "System administrator already exists. Auto-filling form with credentials...",
           });
         } else if (signupError.message && signupError.message.includes("Database error")) {
           // Database error (missing tables) - still allow user to try to sign in
           toast({
             title: "Note: Database Setup Required",
-            description: "The test user account may not be fully set up yet. Check that all database tables exist.",
+            description: "The database needs to be initialized. Check the setup page.",
             variant: "destructive",
           });
         } else {
@@ -99,10 +100,10 @@ const AuthPage = () => {
           throw signupError;
         }
       } else {
-        // Signup succeeded - new test user created
+        // Signup succeeded - new admin user created
         toast({
-          title: "Test User Created",
-          description: "New test user created successfully!",
+          title: "System Admin Created",
+          description: "System administrator created successfully! You will be assigned admin privileges.",
         });
       }
 
@@ -112,15 +113,15 @@ const AuthPage = () => {
 
       toast({
         title: "Form Auto-Filled",
-        description: `Form filled with test credentials: ${testEmail}. Click Sign In to continue.`,
+        description: `Form filled with system admin credentials: ${testEmail}. Click Sign In to continue.`,
       });
     } catch (error: any) {
       toast({
-        title: "Error with Test User",
-        description: error.message || "Unable to prepare test user. You can try to sign in manually.",
+        title: "Error with Admin User",
+        description: error.message || "Unable to prepare admin user. You can try to sign in manually.",
         variant: "destructive",
       });
-      console.error("Error with test user:", error);
+      console.error("Error with admin user:", error);
     } finally {
       setIsCreatingTestUser(false);
     }
@@ -190,7 +191,7 @@ const AuthPage = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validation = signupSchema.safeParse({
       email: signupEmail,
       password: signupPassword,
@@ -207,9 +208,9 @@ const AuthPage = () => {
     }
 
     setIsLoading(true);
-    
+
     const { error } = await signUp(signupEmail, signupPassword, signupFullName);
-    
+
     if (error) {
       let errorMessage = error.message;
       if (error.message.includes("already registered")) {
@@ -220,14 +221,59 @@ const AuthPage = () => {
         description: errorMessage,
         variant: "destructive",
       });
+      setIsLoading(false);
     } else {
-      toast({
-        title: "Account Created!",
-        description: "Welcome! Let's set up your organization.",
-      });
-      // Navigation to onboarding will be handled by useEffect
+      // Check if this is the bootstrap super admin account
+      if (signupEmail === 'admin@example.com' && signupPassword === 'SuperAdmin123!') {
+        toast({
+          title: "Super Admin Account Created!",
+          description: "Initializing system administrator privileges...",
+        });
+
+        // Wait for profile creation and then assign super admin role
+        setTimeout(async () => {
+          try {
+            // Call the bootstrap_super_admin function via Supabase
+            const { data, error: bootstrapError } = await supabase
+              .rpc('bootstrap_super_admin', {
+                admin_email: signupEmail,
+                admin_full_name: signupFullName
+              });
+
+            if (bootstrapError) {
+              console.error('Bootstrap error:', bootstrapError);
+              toast({
+                title: "Note",
+                description: "Account created. Admin role will be assigned on next login.",
+              });
+            } else if (data && data[0]) {
+              const result = data[0];
+              if (result.success) {
+                toast({
+                  title: "System Administrator Ready",
+                  description: "You are now a super admin. Redirecting to admin panel...",
+                });
+              }
+            }
+
+            // The auth context will handle the redirect based on role
+          } catch (err) {
+            console.error('Error assigning super admin role:', err);
+            toast({
+              title: "Info",
+              description: "Admin setup will complete on next login.",
+            });
+          }
+        }, 1000); // Wait 1 second for profile creation
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "Welcome! Let's set up your organization.",
+        });
+      }
+      // Navigation to appropriate page will be handled by useEffect based on role
     }
-    
+
     setIsLoading(false);
   };
 
