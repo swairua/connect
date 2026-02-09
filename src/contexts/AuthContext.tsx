@@ -225,7 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Health check to ensure database connection is established
+  // Health check to ensure database connection is established (non-blocking)
   const healthCheck = async (): Promise<boolean> => {
     try {
       await withRetry(async () => {
@@ -239,7 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      // Toast success message
+      // Toast success message only if successful
       toast({
         title: "Database Connected",
         description: "Successfully connected to the database. You can now login.",
@@ -249,14 +249,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (error) {
       console.error('Database health check failed:', error);
-
-      // Toast error message
-      toast({
-        title: "Database Connection Warning",
-        description: "Unable to establish immediate database connection. Will retry automatically during login.",
-        variant: "destructive",
-      });
-
+      // Don't show destructive toast - login will retry automatically
+      // This prevents alarming users if there's a temporary connection issue
+      console.log('Health check will retry during login attempt');
       return false;
     }
   };
