@@ -151,15 +151,31 @@ const AuthPage = () => {
     const { error } = await signIn(loginEmail, loginPassword);
 
     if (error) {
-      const errorMsg = error.message === "Invalid login credentials"
-        ? "Invalid email or password. Please try again."
-        : `${error.message}`;
-      setError(errorMsg);
-      toast({
-        title: "Login Failed",
-        description: errorMsg,
-        variant: "destructive",
-      });
+      // Check if this is a database schema error
+      if (error.message.includes('Database tables not found') ||
+          error.message.includes('relation') ||
+          error.message.includes('does not exist')) {
+        setError(error.message);
+        toast({
+          title: "Database Not Initialized",
+          description: "Please set up your database first.",
+          variant: "destructive",
+        });
+        // Redirect to setup page
+        setTimeout(() => {
+          navigate('/setup');
+        }, 1500);
+      } else {
+        const errorMsg = error.message === "Invalid login credentials"
+          ? "Invalid email or password. Please try again."
+          : `${error.message}`;
+        setError(errorMsg);
+        toast({
+          title: "Login Failed",
+          description: errorMsg,
+          variant: "destructive",
+        });
+      }
     } else {
       setError(null);
       toast({
