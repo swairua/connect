@@ -234,6 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTenants([]);
           setTenantMemberships([]);
           setCurrentTenant(null);
+          setUserDataError(null);
           setLoading(false);
         }
       }
