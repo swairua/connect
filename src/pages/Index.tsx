@@ -76,6 +76,9 @@ const Index = () => {
   const navigate = useNavigate();
   const [showAdminSection, setShowAdminSection] = useState(false);
 
+  // Get user profile and auth data
+  const { user, profile, roles } = useAuth();
+
   // Fetch data from database
   const { stats: dashboardStats, loading: statsLoading } = useDashboardStats();
   const { servicePlans, loading: plansLoading } = usePackages();
