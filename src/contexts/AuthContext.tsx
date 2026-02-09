@@ -150,7 +150,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // If any query failed, throw error for retry logic
         if (errors.length > 0) {
-          throw new Error(errors.join('; '));
+          const errorMsg = errors.join('; ');
+          // Check if this is a schema error (table doesn't exist)
+          if (errorMsg.includes('does not exist') || errorMsg.includes('relation')) {
+            throw new Error('Database schema not initialized. Please run database setup.');
+          }
+          throw new Error(errorMsg);
         }
 
         // Only set data if queries succeeded
