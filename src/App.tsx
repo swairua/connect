@@ -45,6 +45,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/setup" element={<DatabaseSetupPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><OnboardingPage /></ProtectedRoute>} />
             
