@@ -238,9 +238,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw error;
         }
       });
+
+      // Toast success message
+      toast({
+        title: "Database Connected",
+        description: "Successfully connected to the database. You can now login.",
+        variant: "default",
+      });
+
       return true;
     } catch (error) {
       console.error('Database health check failed:', error);
+
+      // Toast error message
+      toast({
+        title: "Database Connection Warning",
+        description: "Unable to establish immediate database connection. Will retry automatically during login.",
+        variant: "destructive",
+      });
+
       return false;
     }
   };
