@@ -54,19 +54,32 @@ const DatabaseSetupPage = () => {
 
   const retryCheck = async () => {
     setIsChecking(true);
-    const result = await checkDatabaseStatus();
-    setVerifiedTables(result.tables);
-    
-    if (result.initialized) {
-      setStatus("initialized");
+    try {
+      const result = await checkDatabaseStatus();
+      setVerifiedTables(result.tables);
+      setErrors(result.errors);
+
+      if (result.initialized) {
+        setStatus("initialized");
+        toast({
+          title: "Success",
+          description: "Database is now properly initialized!",
+        });
+      } else {
+        toast({
+          title: "Database Not Ready",
+          description: result.errors.length > 0
+            ? result.errors[0]
+            : "Database tables not yet detected. Please check the SQL Editor.",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setErrors([`Error: ${errorMessage}`]);
       toast({
-        title: "Success",
-        description: "Database is now properly initialized!",
-      });
-    } else {
-      toast({
-        title: "Still Initializing",
-        description: "Database tables not yet detected. Please check the SQL Editor.",
+        title: "Connection Error",
+        description: errorMessage,
         variant: "destructive",
       });
     }
