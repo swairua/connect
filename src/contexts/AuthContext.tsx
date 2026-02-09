@@ -317,11 +317,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           // Defer Supabase calls with setTimeout to prevent deadlock
           // Add delay to allow profile creation trigger to execute (typically < 1 second)
+          // Increased to 1000ms to ensure profile is available on both new signups and login attempts
+          console.log(`[Auth] Auth state changed for user ${session.user.id}, fetching data after 1000ms delay`);
           setTimeout(async () => {
             await fetchUserData(session.user.id);
             setLoading(false);
-          }, 500); // 500ms delay for profile trigger execution
+          }, 1000); // 1000ms delay for profile trigger execution and consistency
         } else {
+          console.log(`[Auth] User logged out`);
           setProfile(null);
           setRoles([]);
           setTenants([]);
@@ -340,7 +343,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (session?.user) {
         // Add delay to allow profile creation trigger to execute
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // This is critical for direct login to work properly with existing users
+        console.log(`[Auth] Existing session found for user ${session.user.id}, waiting 1000ms for profile`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
         await fetchUserData(session.user.id);
       }
       setLoading(false);
