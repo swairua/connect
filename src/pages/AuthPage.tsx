@@ -53,6 +53,23 @@ const AuthPage = () => {
     }
   }, [user, authLoading, isSuperAdmin, needsOnboarding, navigate]);
 
+  // Show connection status toast on page load
+  useEffect(() => {
+    if (!authLoading) {
+      if (user) {
+        toast({
+          title: "Connected",
+          description: `Logged in as ${user.email}`,
+        });
+      } else {
+        toast({
+          title: "Not Connected",
+          description: "Please log in or create an account to continue",
+        });
+      }
+    }
+  }, []);
+
   const createTestUser = async () => {
     const testEmail = "gichukisimon@gmail.com";
     const testPassword = "Password123";
