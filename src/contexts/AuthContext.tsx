@@ -225,13 +225,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Health check to ensure database connection is established
+  const healthCheck = async (): Promise<boolean> => {
+    try {
+      await withRetry(async () => {
+        const { error } = await supabase
+          .from('profiles')
+          .select('count', { count: 'exact' })
+          .limit(1);
+
+        if (error) {
+          throw error;
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Database health check failed:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
+    // Perform health check on app initialization to ensure database connection
+    healthCheck();
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           // Defer Supabase calls with setTimeout to prevent deadlock
           setTimeout(async () => {
@@ -254,7 +277,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         await fetchUserData(session.user.id);
       }
