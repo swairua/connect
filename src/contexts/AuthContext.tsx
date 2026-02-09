@@ -288,11 +288,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      // Verify database connection before attempting login
+      const isHealthy = await healthCheck();
+      if (!isHealthy) {
+        console.warn('Database connection unhealthy, attempting login anyway with retries');
+      }
+
+      // Use retry logic for login to handle transient database errors
+      const result = await withRetry(async () => {
+        return await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+      });
+
+      return { error: result.error ?? null };
+    } catch (error) {
+      const loginError = error instanceof Error ? error : new Error(String(error));
+      return { error: loginError };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
