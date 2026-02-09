@@ -77,34 +77,32 @@ const AuthPage = () => {
     try {
       setIsCreatingTestUser(true);
 
-      // First, try to delete the existing user if it exists
-      try {
-        const { data: { user: existingUser } } = await supabase.auth.admin.getUserById("");
-        if (existingUser) {
-          await supabase.auth.admin.deleteUser("");
-        }
-      } catch (error) {
-        // User doesn't exist, which is fine
-        console.log("No existing user to delete");
-      }
-
-      // Create new test user via signUp
+      // Try to check if test user exists by attempting signup
       const { error: signupError } = await signUp(testEmail, testPassword, "Test User");
 
       if (signupError) {
-        // If user already exists, try to just log them in
-        if (signupError.message.includes("already registered")) {
+        // If user already exists, that's fine - we'll use the existing account
+        if (signupError.message && signupError.message.includes("already registered")) {
           toast({
             title: "Test User Exists",
-            description: "Using existing test user credentials. Auto-filling form...",
+            description: "Test user already exists. Auto-filling form with credentials...",
+          });
+        } else if (signupError.message && signupError.message.includes("Database error")) {
+          // Database error (missing tables) - still allow user to try to sign in
+          toast({
+            title: "Note: Database Setup Required",
+            description: "The test user account may not be fully set up yet. Check that all database tables exist.",
+            variant: "destructive",
           });
         } else {
+          // Other signup error
           throw signupError;
         }
       } else {
+        // Signup succeeded - new test user created
         toast({
           title: "Test User Created",
-          description: "Test user created successfully!",
+          description: "New test user created successfully!",
         });
       }
 
@@ -114,15 +112,15 @@ const AuthPage = () => {
 
       toast({
         title: "Form Auto-Filled",
-        description: "Login form has been filled with test credentials. Click Sign In to continue.",
+        description: `Form filled with test credentials: ${testEmail}. Click Sign In to continue.`,
       });
     } catch (error: any) {
       toast({
-        title: "Error Creating Test User",
-        description: error.message || "Failed to create test user",
+        title: "Error with Test User",
+        description: error.message || "Unable to prepare test user. You can try to sign in manually.",
         variant: "destructive",
       });
-      console.error("Error creating test user:", error);
+      console.error("Error with test user:", error);
     } finally {
       setIsCreatingTestUser(false);
     }
