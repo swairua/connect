@@ -190,7 +190,7 @@ const AuthPage = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validation = signupSchema.safeParse({
       email: signupEmail,
       password: signupPassword,
@@ -207,9 +207,9 @@ const AuthPage = () => {
     }
 
     setIsLoading(true);
-    
+
     const { error } = await signUp(signupEmail, signupPassword, signupFullName);
-    
+
     if (error) {
       let errorMessage = error.message;
       if (error.message.includes("already registered")) {
@@ -220,14 +220,59 @@ const AuthPage = () => {
         description: errorMessage,
         variant: "destructive",
       });
+      setIsLoading(false);
     } else {
-      toast({
-        title: "Account Created!",
-        description: "Welcome! Let's set up your organization.",
-      });
-      // Navigation to onboarding will be handled by useEffect
+      // Check if this is the bootstrap super admin account
+      if (signupEmail === 'admin@example.com' && signupPassword === 'SuperAdmin123!') {
+        toast({
+          title: "Super Admin Account Created!",
+          description: "Initializing system administrator privileges...",
+        });
+
+        // Wait for profile creation and then assign super admin role
+        setTimeout(async () => {
+          try {
+            // Call the bootstrap_super_admin function via Supabase
+            const { data, error: bootstrapError } = await supabase
+              .rpc('bootstrap_super_admin', {
+                admin_email: signupEmail,
+                admin_full_name: signupFullName
+              });
+
+            if (bootstrapError) {
+              console.error('Bootstrap error:', bootstrapError);
+              toast({
+                title: "Note",
+                description: "Account created. Admin role will be assigned on next login.",
+              });
+            } else if (data && data[0]) {
+              const result = data[0];
+              if (result.success) {
+                toast({
+                  title: "System Administrator Ready",
+                  description: "You are now a super admin. Redirecting to admin panel...",
+                });
+              }
+            }
+
+            // The auth context will handle the redirect based on role
+          } catch (err) {
+            console.error('Error assigning super admin role:', err);
+            toast({
+              title: "Info",
+              description: "Admin setup will complete on next login.",
+            });
+          }
+        }, 1000); // Wait 1 second for profile creation
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "Welcome! Let's set up your organization.",
+        });
+      }
+      // Navigation to appropriate page will be handled by useEffect based on role
     }
-    
+
     setIsLoading(false);
   };
 
