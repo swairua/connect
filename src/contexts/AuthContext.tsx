@@ -65,6 +65,7 @@ interface AuthContextType {
   currentTenant: Tenant | null;
   tenantMemberships: TenantMembership[];
   loading: boolean;
+  userDataError: string | null;
   isSuperAdmin: boolean;
   needsOnboarding: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
