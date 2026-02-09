@@ -25,6 +25,7 @@ import ReportsPage from "./pages/ReportsPage";
 import ReconciliationPage from "./pages/ReconciliationPage";
 import TenantAdminPage from "./pages/TenantAdminPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import DatabaseSetupPage from "./pages/DatabaseSetupPage";
 import NotFound from "./pages/NotFound";
 
 // Super Admin Pages
