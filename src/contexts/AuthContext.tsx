@@ -8,8 +8,8 @@ type AppRole = 'super_admin' | 'admin' | 'manager' | 'operator' | 'viewer';
 // Retry utility with exponential backoff
 async function withRetry<T>(
   fn: () => Promise<T>,
-  maxRetries = 2,
-  baseDelayMs = 1000
+  maxRetries = 5,
+  baseDelayMs = 500
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -21,7 +21,7 @@ async function withRetry<T>(
 
       if (attempt < maxRetries) {
         const delayMs = baseDelayMs * Math.pow(2, attempt);
-        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delayMs}ms`);
+        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delayMs}ms - Error: ${lastError.message}`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
