@@ -295,21 +295,39 @@ const AuthPage = () => {
                   )}
 
                   {userDataError && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-                      <p className="font-semibold">Server Error:</p>
-                      <p className="mt-1 break-words font-mono text-xs">{userDataError}</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2 w-full text-xs"
-                        onClick={async () => {
-                          await refreshUserData();
-                        }}
-                        disabled={isLoading}
-                      >
-                        Retry
-                      </Button>
+                    <div className={`p-3 rounded text-sm border ${
+                      userDataError.includes('does not exist') || userDataError.includes('Database schema')
+                        ? 'bg-blue-50 border-blue-200 text-blue-900'
+                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                    }`}>
+                      <p className="font-semibold">
+                        {userDataError.includes('does not exist') || userDataError.includes('Database schema')
+                          ? '⚙️ Database Setup Needed'
+                          : '⚠️ Server Error'}
+                      </p>
+                      <p className="mt-2 break-words font-mono text-xs leading-relaxed">{userDataError}</p>
+                      {(userDataError.includes('Database schema') || userDataError.includes('does not exist') || userDataError.includes('relation')) ? (
+                        <Button
+                          type="button"
+                          className="mt-3 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                          onClick={() => navigate('/setup')}
+                        >
+                          Initialize Database
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 w-full text-xs"
+                          onClick={async () => {
+                            await refreshUserData();
+                          }}
+                          disabled={isLoading}
+                        >
+                          Retry
+                        </Button>
+                      )}
                     </div>
                   )}
 
