@@ -311,25 +311,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    try {
+      const redirectUrl = `${window.location.origin}/`;
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
+      // Verify database connection before attempting signup
+      const isHealthy = await healthCheck();
+      if (!isHealthy) {
+        console.warn('Database connection unhealthy, attempting signup anyway with retries');
+      }
 
-    // If signup succeeded, auto-login the user
-    if (!error) {
-      await signIn(email, password);
+      // Use retry logic for signup to handle transient database errors
+      const result = await withRetry(async () => {
+        return await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+      });
+
+      const error = result.error;
+
+      // If signup succeeded, auto-login the user
+      if (!error) {
+        await signIn(email, password);
+      }
+
+      return { error };
+    } catch (error) {
+      const signupError = error instanceof Error ? error : new Error(String(error));
+      return { error: signupError };
     }
-
-    return { error };
   };
 
   const signOut = async () => {
